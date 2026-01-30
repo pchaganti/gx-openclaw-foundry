@@ -5,3 +5,16 @@ dist/
 
 # Local data (don't commit learnings)
 sandbox/
+
+# Marketing drafts (keep local only)
+X_ARTICLE.md
+X_THREAD.md
+DEEP_INTEGRATION_PLAN.md
+
+# Build artifacts
+tsconfig.tsbuildinfo
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
