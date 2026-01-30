@@ -3,7 +3,6 @@
  *
  * Based on: "Automated Design of Agentic Systems" (arXiv:2408.08435)
  * Authors: Shengran Hu, Cong Lu, Jeff Clune
- * Acknowledgments: Rach Pradhan (insightful discussions)
  *
  * Core algorithm:
  * 1. Initialize archive with baseline agents
