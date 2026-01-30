@@ -34,6 +34,10 @@ export interface PublishBody {
   skillMd: string;
   apiTemplate: string;
   creatorWallet: string;
+  /** Ed25519 signature proving wallet ownership (base64) */
+  signature: string;
+  /** Unix timestamp in ms — must be within 5 minutes */
+  timestamp: string;
 }
 
 /** What search returns per skill. */

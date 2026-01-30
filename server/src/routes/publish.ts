@@ -3,12 +3,37 @@
  *
  * Accepts a skill definition (no credentials) and stores it with the
  * creator's wallet address for x402 profit sharing.
+ *
+ * Authentication: Requires Ed25519 signature proving wallet ownership.
+ * Client must sign: "Foundry:publish:<service>:<timestamp>"
  */
 
 import { createHash } from "node:crypto";
+import { PublicKey } from "@solana/web3.js";
+import nacl from "tweetnacl";
 import { getDb } from "../db.js";
 import type { PublishBody } from "../types.js";
 import { reviewSkill, staticScan } from "../skill-review.js";
+
+/** Verify Ed25519 signature proving wallet ownership */
+function verifyWalletSignature(
+  walletAddress: string,
+  signature: string,
+  message: string
+): boolean {
+  try {
+    const publicKey = new PublicKey(walletAddress);
+    const signatureBytes = Buffer.from(signature, "base64");
+    const messageBytes = new TextEncoder().encode(message);
+    return nacl.sign.detached.verify(
+      messageBytes,
+      signatureBytes,
+      publicKey.toBytes()
+    );
+  } catch {
+    return false;
+  }
+}
 
 /** Generate a deterministic skill ID from service + baseUrl. */
 function makeSkillId(service: string, baseUrl: string): string {
@@ -102,6 +127,35 @@ export async function publishSkill(req: Request): Promise<Response> {
     return Response.json(
       { error: "Invalid Solana wallet address." },
       { status: 400 },
+    );
+  }
+
+  // ── Signature verification — prove wallet ownership ────────────────
+  const { signature, timestamp } = body as any;
+  if (!signature || !timestamp) {
+    return Response.json(
+      { error: "Missing signature or timestamp. Sign message: 'Foundry:publish:<service>:<timestamp>'" },
+      { status: 401 },
+    );
+  }
+
+  // Prevent replay attacks — timestamp must be within 5 minutes
+  const ts = parseInt(timestamp, 10);
+  const now = Date.now();
+  const fiveMinutes = 5 * 60 * 1000;
+  if (isNaN(ts) || Math.abs(now - ts) > fiveMinutes) {
+    return Response.json(
+      { error: "Timestamp expired or invalid. Must be within 5 minutes." },
+      { status: 401 },
+    );
+  }
+
+  // Verify Ed25519 signature
+  const expectedMessage = `Foundry:publish:${body.service}:${timestamp}`;
+  if (!verifyWalletSignature(body.creatorWallet, signature, expectedMessage)) {
+    return Response.json(
+      { error: "Invalid signature. Cannot prove wallet ownership." },
+      { status: 401 },
     );
   }
 

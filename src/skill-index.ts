@@ -278,12 +278,56 @@ export class SkillIndexClient {
     return Buffer.from(JSON.stringify(paymentPayload)).toString("base64");
   }
 
-  /** Publish a skill to the index (free). */
+  /**
+   * Publish a skill to the index.
+   * Requires signing the message with the creator's private key to prove wallet ownership.
+   */
   async publish(payload: PublishPayload): Promise<PublishResult> {
+    if (!this.solanaPrivateKey) {
+      throw new Error(
+        "No Solana private key configured. Required to sign publish requests."
+      );
+    }
+
+    // Import Solana libraries
+    const { Keypair } = await import("@solana/web3.js");
+    const nacl = await import("tweetnacl");
+    const bs58 = await import("bs58");
+
+    // Decode keypair
+    let keypair: InstanceType<typeof Keypair>;
+    try {
+      keypair = Keypair.fromSecretKey(bs58.default.decode(this.solanaPrivateKey));
+    } catch {
+      throw new Error("Invalid Solana private key. Must be base58-encoded.");
+    }
+
+    // Verify wallet matches
+    const walletFromKey = keypair.publicKey.toBase58();
+    if (walletFromKey !== payload.creatorWallet) {
+      throw new Error(
+        `Wallet mismatch: private key is for ${walletFromKey}, but payload claims ${payload.creatorWallet}`
+      );
+    }
+
+    // Sign message: "Foundry:publish:<service>:<timestamp>"
+    const timestamp = String(Date.now());
+    const message = `Foundry:publish:${payload.service}:${timestamp}`;
+    const messageBytes = new TextEncoder().encode(message);
+    const signatureBytes = nacl.default.sign.detached(messageBytes, keypair.secretKey);
+    const signature = Buffer.from(signatureBytes).toString("base64");
+
+    // Include signature and timestamp in payload
+    const signedPayload = {
+      ...payload,
+      signature,
+      timestamp,
+    };
+
     const resp = await fetch(`${this.indexUrl}/skills/publish`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(signedPayload),
       signal: AbortSignal.timeout(30_000),
     });
 

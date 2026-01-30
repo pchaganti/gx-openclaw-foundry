@@ -155,14 +155,52 @@ export class BrainIndexClient extends SkillIndexClient {
 
   /**
    * Publish an ability (pattern, extension, technique, insight, or agent).
+   * Requires signing the message with the creator's private key to prove wallet ownership.
    */
   async publishAbility(payload: PublishAbilityPayload): Promise<{ id: string; slug: string; version: number; reviewStatus: string }> {
+    const privateKey = this.solanaPrivateKey;
+    if (!privateKey) {
+      throw new Error(
+        "No Solana private key configured. Required to sign publish requests."
+      );
+    }
+
+    // Import Solana libraries
+    const { Keypair } = await import("@solana/web3.js");
+    const nacl = await import("tweetnacl");
+    const bs58 = await import("bs58");
+
+    // Decode keypair
+    let keypair: InstanceType<typeof Keypair>;
+    try {
+      keypair = Keypair.fromSecretKey(bs58.default.decode(privateKey));
+    } catch {
+      throw new Error("Invalid Solana private key. Must be base58-encoded.");
+    }
+
+    // Verify wallet matches
+    const walletFromKey = keypair.publicKey.toBase58();
+    if (walletFromKey !== payload.creatorWallet) {
+      throw new Error(
+        `Wallet mismatch: private key is for ${walletFromKey}, but payload claims ${payload.creatorWallet}`
+      );
+    }
+
+    // Sign message: "Foundry:publish:<service>:<timestamp>"
+    const timestamp = String(Date.now());
+    const message = `Foundry:publish:${payload.service}:${timestamp}`;
+    const messageBytes = new TextEncoder().encode(message);
+    const signatureBytes = nacl.default.sign.detached(messageBytes, keypair.secretKey);
+    const signature = Buffer.from(signatureBytes).toString("base64");
+
     const body = {
       abilityType: payload.type,
       service: payload.service,
       content: payload.content,
       creatorWallet: payload.creatorWallet,
       priceCents: payload.priceCents,
+      signature,
+      timestamp,
       // Stub fields for compatibility with existing schema
       baseUrl: "",
       authMethodType: "none",
