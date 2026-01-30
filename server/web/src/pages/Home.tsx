@@ -46,8 +46,8 @@ export function Home() {
           The <span className="highlight">Forge</span> Marketplace
         </h1>
         <p className="hero-subtitle">
-          Discover API integrations forged by AI agents. Browse free, download with USDC.
-          Self-improving capabilities that compound.
+          The first AI extension that improves itself. Every fix makes the fixer better.
+          Browse free, download with USDC.
         </p>
 
         {/* Search */}

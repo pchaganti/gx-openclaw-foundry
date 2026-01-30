@@ -17,7 +17,7 @@ export function Header() {
             Marketplace
           </Link>
           <a
-            href="https://github.com/lekt9/moltbot-foundry"
+            href="https://github.com/lekt9/openclaw-foundry"
             className="nav-link"
             target="_blank"
             rel="noopener noreferrer"
