@@ -42,6 +42,7 @@ const WEB_DIST = join(__dirname, "..", "web", "dist");
 
 const server = Bun.serve({
   port: PORT,
+  hostname: "0.0.0.0",
   async fetch(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const path = url.pathname;
@@ -147,4 +148,4 @@ function addCors(resp: Response, headers: Record<string, string>): Response {
   });
 }
 
-console.log(`[unbrowse-index] Listening on http://localhost:${server.port}`);
+console.log(`[unbrowse-index] Listening on http://0.0.0.0:${server.port}`);
