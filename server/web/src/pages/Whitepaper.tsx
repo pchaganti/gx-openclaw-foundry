@@ -18,7 +18,7 @@ export function Whitepaper() {
         <section className="whitepaper-abstract">
           <h2>Abstract</h2>
           <p>
-            Foundry is an AI agent that writes its own code. Not code for you—code for <em>itself</em>.
+            Foundry is an open-source AI agent that writes its own code. Not code for you—code for <em>itself</em>.
             When Foundry fails at a task, it researches the problem, writes a fix, and deploys that fix
             into its own codebase. The system that writes the code IS the code being written.
           </p>
@@ -428,7 +428,7 @@ export function Whitepaper() {
               OpenClaw
             </a>
             <a href="https://github.com/lekt9/openclaw-foundry" target="_blank" rel="noopener noreferrer">
-              GitHub
+              Open Source on GitHub
             </a>
             <a href="https://dexscreener.com/solana/fdry" target="_blank" rel="noopener noreferrer">
               $FDRY on Solana
