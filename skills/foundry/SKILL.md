@@ -3,25 +3,90 @@ name: foundry
 description: Self-writing meta-extension that forges new capabilities — researches docs, writes extensions, tools, hooks, and skills
 homepage: https://getfoundry.app
 user-invocable: false
-metadata: {"openclaw":{"requires":{"bins":["node"]}}}
+metadata: {"openclaw":{"requires":{"bins":["node"]},"repository":"github:lekt9/openclaw-foundry"}}
 ---
 
 # Foundry
 
 **The forge that forges itself.** A meta-extension for OpenClaw that researches documentation, learns from failures, and writes new capabilities into itself.
 
-## Installation
+## Quick Start
 
+### Option A: Config Only (Recommended)
+
+Add to `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "foundry": {
+        "enabled": true,
+        "source": "github:lekt9/openclaw-foundry"
+      }
+    }
+  }
+}
+```
+
+Restart the gateway:
 ```bash
-# Clone to extensions directory
-git clone https://github.com/openclaw/foundry ~/.openclaw/extensions/foundry
-
-# Install dependencies
-cd ~/.openclaw/extensions/foundry && npm install
-
-# Restart gateway
 openclaw gateway restart
 ```
+
+### Option B: Nix (Reproducible)
+
+```bash
+nix run github:lekt9/openclaw-foundry
+```
+
+### Option C: Manual Clone
+
+```bash
+git clone https://github.com/lekt9/openclaw-foundry ~/.openclaw/extensions/foundry
+cd ~/.openclaw/extensions/foundry && npm install
+openclaw gateway restart
+```
+
+## Configuration
+
+Full configuration options in `~/.openclaw/openclaw.json`:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "foundry": {
+        "enabled": true,
+        "source": "github:lekt9/openclaw-foundry",
+        "config": {
+          "autoLearn": true,
+          "sources": {
+            "docs": true,
+            "experience": true,
+            "arxiv": true,
+            "github": true
+          },
+          "marketplace": {
+            "autoPublish": false
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Config Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `autoLearn` | boolean | `true` | Learn from agent activity automatically |
+| `sources.docs` | boolean | `true` | Learn from OpenClaw documentation |
+| `sources.experience` | boolean | `true` | Learn from own successes/failures |
+| `sources.arxiv` | boolean | `true` | Learn from arXiv papers |
+| `sources.github` | boolean | `true` | Learn from GitHub repos |
+| `marketplace.autoPublish` | boolean | `false` | Auto-publish high-value patterns |
 
 ## What Foundry Does
 
@@ -119,26 +184,6 @@ Foundry observes its own tool calls and learns:
 3. **Patterns** → Injected as context in future conversations
 4. **Crystallization** → High-value patterns become permanent capabilities
 
-## Configuration
-
-In `~/.openclaw/openclaw.json`:
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "foundry": {
-        "enabled": true,
-        "config": {
-          "dataDir": "~/.openclaw/foundry",
-          "autoLearn": true
-        }
-      }
-    }
-  }
-}
-```
-
 ## Security
 
 Foundry validates all generated code before deployment:
@@ -149,5 +194,5 @@ Foundry validates all generated code before deployment:
 
 ## Links
 
-- [GitHub](https://github.com/openclaw/foundry)
+- [GitHub](https://github.com/lekt9/openclaw-foundry)
 - [Foundry Marketplace](https://api.claw.getfoundry.app)

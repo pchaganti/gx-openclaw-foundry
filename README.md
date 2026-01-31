@@ -186,28 +186,77 @@ This is **recursive self-improvement** — each capability makes acquiring the n
 
 ## Installation
 
-```bash
-# Clone into your OpenClaw extensions directory
-git clone https://github.com/lekt9/openclaw-foundry ~/.openclaw/extensions/foundry
+### Option A: Config Only (Recommended)
 
-# Install dependencies
-cd ~/.openclaw/extensions/foundry
-npm install
+Add to `~/.openclaw/openclaw.json`:
 
-# Add to openclaw.json
+```json
 {
   "plugins": {
-    "load": {
-      "paths": [
-        "~/.openclaw/extensions/foundry"
-      ]
+    "entries": {
+      "foundry": {
+        "enabled": true,
+        "source": "github:lekt9/openclaw-foundry"
+      }
     }
   }
 }
+```
 
-# Restart gateway
+Restart the gateway:
+```bash
 openclaw gateway restart
 ```
+
+### Option B: Nix (Reproducible)
+
+```bash
+nix run github:lekt9/openclaw-foundry
+```
+
+### Option C: Manual Clone
+
+```bash
+git clone https://github.com/lekt9/openclaw-foundry ~/.openclaw/extensions/foundry
+cd ~/.openclaw/extensions/foundry && npm install
+openclaw gateway restart
+```
+
+### Configuration
+
+Full config options:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "foundry": {
+        "enabled": true,
+        "source": "github:lekt9/openclaw-foundry",
+        "config": {
+          "autoLearn": true,
+          "sources": {
+            "docs": true,
+            "experience": true,
+            "arxiv": true,
+            "github": true
+          },
+          "marketplace": {
+            "autoPublish": false
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `autoLearn` | `true` | Learn from agent activity automatically |
+| `sources.docs` | `true` | Learn from OpenClaw documentation |
+| `sources.experience` | `true` | Learn from own successes/failures |
+| `marketplace.autoPublish` | `false` | Auto-publish high-value patterns |
 
 ## Tools
 
