@@ -12,50 +12,31 @@ metadata: {"openclaw":{"requires":{"bins":["node"]},"repository":"github:lekt9/o
 
 ## Quick Start
 
-### Just Ask (Easiest)
+**Just tell your agent:**
 
 ```
-"Install the Foundry plugin"
+"install @getfoundry/foundry"
 ```
 
-The agent will handle the rest.
+That's it.
 
-### Option A: npm (Recommended)
+---
+
+### Manual Install
 
 ```bash
-npm install -g @getfoundry/foundry
+openclaw plugins install @getfoundry/foundry
 ```
 
-Add to `~/.openclaw/openclaw.json`:
+Or add to `~/.openclaw/openclaw.json`:
 ```json
 {
   "plugins": {
     "entries": {
-      "foundry": { "enabled": true }
+      "foundry": { "enabled": true, "source": "npm:@getfoundry/foundry" }
     }
   }
 }
-```
-
-### Option B: GitHub Source
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "foundry": {
-        "enabled": true,
-        "source": "github:lekt9/openclaw-foundry"
-      }
-    }
-  }
-}
-```
-
-### Option C: Nix
-
-```bash
-nix run github:lekt9/openclaw-foundry
 ```
 
 ## Configuration
