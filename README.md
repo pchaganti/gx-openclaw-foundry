@@ -6,7 +6,7 @@
 
 **The forge that forges itself.**
 
-[![FDRY](https://img.shields.io/badge/FDRY-Solana-9945FF)](https://dexscreener.com/solana/2jc1lpgy1zjl9uertfdmtnm4kc2ahhydk4tqqqgbjdhh)
+Also: Check out unbrowse.ai. A more focused version of foundry centered around APIs from network requests.
 
 Foundry is a self-writing meta-extension for [OpenClaw](https://github.com/lekt9/openclaw) that learns how you work, researches documentation, and writes new capabilities into itself. It observes your workflows, crystallizes patterns into tools, and upgrades itself to match how you operate.
 
