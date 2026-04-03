@@ -1,193 +1,45 @@
 ---
 name: foundry
-description: Self-writing meta-extension that forges new capabilities — researches docs, discovers repeated workflows, scaffolds candidate skills, writes extensions/tools/hooks/skills, and routes them through memory
-homepage: https://getfoundry.app
+description: Discover repeated workflows from local history, scaffold candidate skills, and fabricate portable skill bundles with share, index, and host-memory artifacts.
 user-invocable: true
-metadata: {"openclaw":{"requires":{"bins":["node"]},"repository":"github:unbrowse-ai/foundry"}}
 ---
 
 # Foundry
 
-**The forge that forges itself.** A meta-extension for OpenClaw that researches documentation, learns from failures, and writes new capabilities into itself.
+Core job:
 
-## Installation
+- turn repeated workflow patterns into a portable skill bundle from one preset
 
-When the user asks to install Foundry or `@getfoundry/foundry-openclaw`, run this command:
+Use this skill when:
+
+- local chat history should be mined for recurring workflows
+- repeated workflows should become candidate skills
+- a bundle should emit share/index/memory artifacts together
+- host memory should route future requests to the right skill
+
+Do not use this skill for:
+
+- one-off domain tasks with no bundle concern
+- generic notes with no routing or install value
+- plugin/runtime work unrelated to workflow discovery or bundle fabrication
+
+Workflow:
+
+1. Run `npm run discover` to identify recurring workflow clusters.
+2. Inspect `candidate-skills.json` and scaffolded candidate `SKILL.md` drafts.
+3. Run `npm run fabricate` to emit bundle/share/index artifacts.
+4. If needed, rerun `scripts/fabricate-bundle.mjs` with `--host` and `--scope` to write host memory.
+
+Load-bearing rules:
+
+- one preset is the source of truth
+- one entry skill owns the bundle-level job
+- candidate skill discovery must be evidence-backed
+- bundle, share, registry, and memory outputs stay derived from the same preset
+- memory must say which skill to call, not just what to install
+
+Install:
 
 ```bash
-openclaw plugins install @getfoundry/foundry-openclaw
+npx skills add https://github.com/unbrowse-ai/foundry --skill foundry --yes
 ```
-
-This will:
-1. Download the plugin from npm
-2. Extract to `~/.openclaw/extensions/foundry/`
-3. Enable it automatically
-4. Restart the gateway to load
-
-After installation, the user will have access to all Foundry tools like `foundry_research`, `foundry_write_extension`, etc.
-
-## Alternative: Manual Config
-
-Add to `~/.openclaw/openclaw.json`:
-```json
-{
-  "plugins": {
-    "entries": {
-      "foundry": { "enabled": true }
-    }
-  }
-}
-```
-
-## Configuration
-
-Full configuration options in `~/.openclaw/openclaw.json`:
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "foundry": {
-        "enabled": true,
-        "source": "github:unbrowse-ai/foundry",
-        "config": {
-          "autoLearn": true,
-          "sources": {
-            "docs": true,
-            "experience": true,
-            "arxiv": true,
-            "github": true
-          },
-          "marketplace": {
-            "autoPublish": false
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-### Config Options
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `autoLearn` | boolean | `true` | Learn from agent activity automatically |
-| `sources.docs` | boolean | `true` | Learn from OpenClaw documentation |
-| `sources.experience` | boolean | `true` | Learn from own successes/failures |
-| `sources.arxiv` | boolean | `true` | Learn from arXiv papers |
-| `sources.github` | boolean | `true` | Learn from GitHub repos |
-| `marketplace.autoPublish` | boolean | `false` | Auto-publish high-value patterns |
-
-## What Foundry Does
-
-Foundry is an AI-powered development agent that can:
-
-1. **Research** — Fetch and understand OpenClaw documentation on demand
-2. **Discover Skills** — Periodically scan chat history and identify repeated workflows worth promoting
-3. **Write Extensions** — Generate new tools and hooks for OpenClaw
-4. **Write Skills** — Create ClawHub-compatible skill packages
-5. **Fabricate Bundles** — Emit share/index/host-memory artifacts for a reusable skill bundle
-6. **Self-Modify** — Add new capabilities to itself
-7. **Learn** — Record patterns from failures and successes
-
-## Tools
-
-### Research & Documentation
-
-| Tool | Description |
-|------|-------------|
-| `foundry_research` | Search docs.openclaw.ai for best practices |
-| `foundry_docs` | Read specific documentation pages |
-
-### Writing Capabilities
-
-| Tool | Description |
-|------|-------------|
-| `foundry_implement` | Research + implement a capability end-to-end |
-| `foundry_write_extension` | Write a new OpenClaw extension |
-| `foundry_write_skill` | Write an AgentSkills-compatible skill |
-| `foundry_write_browser_skill` | Write a browser automation skill |
-| `foundry_write_hook` | Write a standalone hook |
-| `foundry_add_tool` | Add a tool to an existing extension |
-| `foundry_add_hook` | Add a hook to an existing extension |
-
-### Self-Modification
-
-| Tool | Description |
-|------|-------------|
-| `foundry_extend_self` | Add new capability to Foundry itself |
-| `foundry_learnings` | View learned patterns and insights |
-| `foundry_list` | List all written artifacts |
-| `scripts/discover-skill-candidates.mjs` | Scan local history and scaffold candidate skills |
-| `scripts/fabricate-bundle.mjs` | Emit bundle/share/index/memory artifacts plus candidate skill report |
-
-### Marketplace
-
-| Tool | Description |
-|------|-------------|
-| `foundry_publish_ability` | Publish pattern/skill to Foundry Marketplace |
-| `foundry_marketplace` | Search, browse, and install community abilities |
-
-## Usage Examples
-
-### Research before implementing
-
-```
-User: I want to add a webhook to my extension
-
-Agent: Let me research webhook patterns first...
-→ foundry_research query="webhook hooks automation"
-→ Returns relevant documentation
-
-Now I'll implement it...
-→ foundry_add_hook extensionId="my-ext" event="webhook:incoming" ...
-```
-
-### Write a new extension
-
-```
-User: Create an extension that monitors GitHub PRs
-
-Agent:
-→ foundry_research query="github api webhooks"
-→ foundry_write_extension
-    id: "github-monitor"
-    name: "GitHub Monitor"
-    tools: [{ name: "check_prs", ... }]
-    hooks: [{ event: "cron:hourly", ... }]
-```
-
-### Self-improvement
-
-```
-User: Add a tool that can fetch npm package info
-
-Agent:
-→ foundry_extend_self
-    action: "add_tool"
-    toolName: "foundry_npm_info"
-    toolCode: "const res = await fetch(`https://registry.npmjs.org/${p.package}`)..."
-```
-
-## How Learning Works
-
-Foundry observes its own tool calls and learns:
-
-1. **Failures** → Records error + context
-2. **Resolutions** → Links fix to failure → Creates pattern
-3. **Patterns** → Injected as context in future conversations
-4. **Crystallization** → High-value patterns become permanent capabilities
-
-## Security
-
-Foundry validates all generated code before deployment:
-
-- **Blocked**: `child_process`, `eval`, `~/.ssh`, `~/.aws`
-- **Sandboxed**: Extensions tested in isolated process before installation
-- **Reviewed**: You approve before any code is written to disk
-
-## Links
-
-- [GitHub](https://github.com/unbrowse-ai/foundry)
-- [Foundry Marketplace](https://api.claw.getfoundry.app)
