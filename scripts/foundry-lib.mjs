@@ -49,12 +49,22 @@ export function readPreset(presetPath) {
 }
 
 export function validatePreset(preset) {
-  const required = ["bundle_id", "title", "fabric", "repo", "bootstrap_skill", "skills", "routes", "share", "index"];
+  const required = ["bundle_id", "title", "fabric", "bootstrap_skill", "skills", "routes", "share", "index"];
   for (const key of required) {
     if (!(key in preset)) throw new Error(`Missing preset field: ${key}`);
   }
   if (!preset.fabric?.repo || !preset.fabric?.skill) throw new Error("fabric.repo + fabric.skill required");
   if (!Array.isArray(preset.skills) || preset.skills.length === 0) throw new Error("skills[] required");
+  for (const skill of preset.skills) {
+    if (typeof skill === "string") continue;
+    if (!skill || typeof skill !== "object") {
+      throw new Error("skills[] entries must be strings or objects");
+    }
+    const name = skill.name || skill.skill;
+    if (typeof name !== "string" || name.trim().length === 0) {
+      throw new Error("object skills[] entries require name");
+    }
+  }
   if (!Array.isArray(preset.routes) || preset.routes.length === 0) throw new Error("routes[] required");
   if (!preset.share?.manifest_path) throw new Error("share.manifest_path required");
   if (!preset.index?.slug || !preset.index?.summary || !Array.isArray(preset.index.tags)) {
@@ -76,12 +86,51 @@ export function validatePreset(preset) {
   return preset;
 }
 
+function defaultSkillInstallCommand(repo, skillName) {
+  return repo ? `npx skills add ${repo} --skill ${skillName} --yes` : "";
+}
+
+export function normalizeSkillEntry(skill, preset) {
+  if (typeof skill === "string") {
+    return {
+      name: skill,
+      repo: preset.repo || "",
+      source_path: "",
+      install_command: defaultSkillInstallCommand(preset.repo || "", skill),
+    };
+  }
+
+  const name = String(skill.name || skill.skill || "").trim();
+  const repo = String(skill.repo || preset.repo || "").trim();
+  const source_path = String(skill.source_path || "").trim();
+  const install_command = typeof skill.install === "string"
+    ? skill.install.trim()
+    : defaultSkillInstallCommand(repo, name);
+
+  return {
+    name,
+    repo,
+    source_path,
+    install_command,
+  };
+}
+
+export function presetSkillEntries(preset) {
+  return (preset.skills ?? []).map((skill) => normalizeSkillEntry(skill, preset));
+}
+
+export function presetSkillNames(preset) {
+  return presetSkillEntries(preset).map((skill) => skill.name);
+}
+
 export function fabricInstallCommand(preset) {
   return `npx skills add ${preset.fabric.repo} --skill ${preset.fabric.skill} --yes`;
 }
 
 export function bundleInstallCommands(preset) {
-  return preset.skills.map((skill) => `npx skills add ${preset.repo} --skill ${skill} --yes`);
+  return presetSkillEntries(preset)
+    .map((skill) => skill.install_command)
+    .filter(Boolean);
 }
 
 export function buildHostTargets() {
@@ -93,6 +142,11 @@ export function buildHostTargets() {
 }
 
 export function renderMemoryBlock(preset, host) {
+  const installLines = presetSkillEntries(preset).map((skill) => {
+    if (skill.install_command) return `- \`${skill.install_command}\``;
+    if (skill.source_path) return `- \`${skill.name}\` — source: \`${skill.source_path}\``;
+    return `- \`${skill.name}\` — install command not declared`;
+  });
   const lines = [
     MARKER_BEGIN,
     `## ${preset.title} (${host})`,
@@ -101,7 +155,7 @@ export function renderMemoryBlock(preset, host) {
     `- \`${fabricInstallCommand(preset)}\``,
     "",
     "Install bundled skills:",
-    ...bundleInstallCommands(preset).map((command) => `- \`${command}\``),
+    ...installLines,
     "",
     "Bundle entrypoint:",
     `- If the request is about mining chat history into skills, discovering candidate skills, fabricating a portable bundle, sharing it, indexing it, or writing host routing memory, call \`${preset.fabric.skill}\`.`,
@@ -152,13 +206,15 @@ export function targetFileFor(host, scope, cwd) {
 }
 
 export function buildBundleManifest(preset) {
+  const skillEntries = presetSkillEntries(preset);
   return {
     bundle_id: preset.bundle_id,
     title: preset.title,
     fabric: preset.fabric,
-    repo: preset.repo,
+    repo: preset.repo || "",
     bootstrap_skill: preset.bootstrap_skill,
-    skills: preset.skills,
+    skills: skillEntries.map((skill) => skill.name),
+    skill_sources: skillEntries,
     routes: preset.routes,
     dependency_graph: preset.dependency_graph,
     install_commands: {
@@ -173,13 +229,15 @@ export function buildBundleManifest(preset) {
 }
 
 export function buildShareManifest(preset) {
+  const skillEntries = presetSkillEntries(preset);
   return {
     bundle_id: preset.bundle_id,
     fabric: preset.fabric,
     transport: preset.share.transport,
     manifest_path: preset.share.manifest_path,
-    repo: preset.repo,
-    skills: preset.skills,
+    repo: preset.repo || "",
+    skills: skillEntries.map((skill) => skill.name),
+    skill_sources: skillEntries,
     dependency_graph: preset.dependency_graph,
     install_commands: {
       foundry: fabricInstallCommand(preset),
@@ -190,16 +248,18 @@ export function buildShareManifest(preset) {
 }
 
 export function buildRegistryEntry(preset) {
+  const skillEntries = presetSkillEntries(preset);
   return {
     slug: preset.index.slug,
     title: preset.title,
     summary: preset.index.summary,
     tags: preset.index.tags,
     fabric: preset.fabric,
-    repo: preset.repo,
+    repo: preset.repo || "",
     bundle_id: preset.bundle_id,
     bootstrap_skill: preset.bootstrap_skill,
-    skills: preset.skills,
+    skills: skillEntries.map((skill) => skill.name),
+    skill_sources: skillEntries,
     routes: preset.routes,
     dependency_graph: preset.dependency_graph,
     history: preset.history,
@@ -252,7 +312,40 @@ function extractTexts(parsed) {
       .filter((item) => item?.type === "input_text" && typeof item?.text === "string")
       .map((item) => item.text);
   }
+  if (parsed?.isMeta) return [];
+  if (parsed?.type === "user" && parsed?.message?.role === "user") {
+    const content = parsed.message.content;
+    if (typeof content === "string") return [content];
+    if (Array.isArray(content)) {
+      return content
+        .filter((item) => item?.type === "text" && typeof item?.text === "string")
+        .map((item) => item.text);
+    }
+  }
   return [];
+}
+
+function collectJsonlFiles(inputPath) {
+  if (!existsSync(inputPath)) return [];
+  const stat = statSync(inputPath);
+  if (stat.isFile()) return [inputPath];
+  if (!stat.isDirectory()) return [];
+
+  const out = [];
+  for (const entry of readdirSync(inputPath)) {
+    const entryPath = path.join(inputPath, entry);
+    try {
+      const entryStat = statSync(entryPath);
+      if (entryStat.isDirectory()) {
+        out.push(...collectJsonlFiles(entryPath));
+        continue;
+      }
+      if (entryStat.isFile() && entry.endsWith(".jsonl")) out.push(entryPath);
+    } catch {
+      // skip broken entries
+    }
+  }
+  return out;
 }
 
 export function loadHistoryTexts(preset) {
@@ -260,13 +353,17 @@ export function loadHistoryTexts(preset) {
   for (const source of preset.history?.sources ?? []) {
     const resolved = expandHome(source);
     if (!existsSync(resolved)) continue;
-    if (statSync(resolved).isDirectory()) {
-      for (const entry of readdirSync(resolved).filter((name) => name.endsWith(".jsonl"))) {
-        out.push(...parseHistoryFile(path.join(resolved, entry)));
+    try {
+      for (const filePath of collectJsonlFiles(resolved)) {
+        try {
+          out.push(...parseHistoryFile(filePath));
+        } catch {
+          // skip unreadable files
+        }
       }
-      continue;
+    } catch {
+      // skip unreadable sources
     }
-    out.push(...parseHistoryFile(resolved));
   }
   return out;
 }
@@ -303,13 +400,9 @@ export function loadToolTraceSessions(preset) {
   for (const source of preset.tool_routing?.sources ?? []) {
     const resolved = expandHome(source);
     if (!existsSync(resolved)) continue;
-    if (statSync(resolved).isDirectory()) {
-      for (const entry of readdirSync(resolved).filter((name) => name.endsWith(".jsonl"))) {
-        out.push(...parseToolTraceFile(path.join(resolved, entry)));
-      }
-      continue;
+    for (const filePath of collectJsonlFiles(resolved)) {
+      out.push(...parseToolTraceFile(filePath));
     }
-    out.push(...parseToolTraceFile(resolved));
   }
   return out;
 }

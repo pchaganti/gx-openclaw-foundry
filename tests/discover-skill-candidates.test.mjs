@@ -57,3 +57,78 @@ test("discovers recurring candidate skills from history and writes report", () =
   assert.doesNotMatch(readFileSync(installedSkill, "utf8"), /OPENAI_API_KEY|SLACK_BOT_TOKEN|sk-live-secret-value|lewis@example\.com|\/Users\/lekt9/);
   assert.doesNotMatch(evidence, /sk-live-secret-value|lewis@example\.com|\/Users\/lekt9/);
 });
+
+test("scopes candidate discovery to the preset workflow family instead of global history noise", () => {
+  const home = mkdtempSync(path.join(os.tmpdir(), "foundry-discover-scope-home-"));
+  const outDir = mkdtempSync(path.join(os.tmpdir(), "foundry-discover-scope-out-"));
+  const presetDir = mkdtempSync(path.join(os.tmpdir(), "foundry-discover-scope-preset-"));
+  const outFile = path.join(outDir, "candidate-skills.json");
+  const presetFile = path.join(presetDir, "fundraising-preset.json");
+  tmpDirs.push(home, outDir, presetDir);
+
+  mkdirSync(path.join(home, ".codex"), { recursive: true });
+  writeFileSync(path.join(home, ".codex", "history.jsonl"), [
+    JSON.stringify({ text: "[SUGGESTION MODE: Suggest what the user might naturally type next into Claude Code.]" }),
+    JSON.stringify({ text: "[SUGGESTION MODE: Suggest what the user might naturally type next into Claude Code.]" }),
+    JSON.stringify({ text: "draft investor followup email for warm vc allocation update after partner meeting" }),
+    JSON.stringify({ text: "write investor followup note for warm vc allocation deadline and round update" }),
+    JSON.stringify({ text: "prepare investor followup blurb for warm vc allocation deadline thread" }),
+    "",
+  ].join("\n"));
+
+  writeFileSync(presetFile, `${JSON.stringify({
+    bundle_id: "fundraising-test",
+    title: "Fundraising Test",
+    fabric: {
+      repo: "https://github.com/unbrowse-ai/foundry",
+      skill: "foundry",
+    },
+    bootstrap_skill: "find-skills",
+    skills: [
+      { name: "investor-outreach", source_path: "~/.agents/skills/investor-outreach/SKILL.md" },
+    ],
+    routes: [
+      {
+        when: "the request is about investor followup emails and warm vc outreach",
+        call: "investor-outreach",
+      },
+    ],
+    history: {
+      sources: ["~/.codex/history.jsonl"],
+      skills: [
+        {
+          skill: "investor-outreach",
+          min_hits: 2,
+          matchers: ["investor followup", "warm vc"],
+        },
+      ],
+    },
+    share: {
+      transport: "files",
+      manifest_path: "/.well-known/skill-bundles/fundraising-test/share.json",
+    },
+    index: {
+      slug: "fundraising-test",
+      summary: "test preset",
+      tags: ["test"],
+    },
+  }, null, 2)}\n`);
+
+  const stdout = execFileSync(process.execPath, [
+    "scripts/discover-skill-candidates.mjs",
+    "--preset", presetFile,
+    "--out", outFile,
+    "--threshold", "2",
+  ], {
+    cwd: REPO_ROOT,
+    env: { ...process.env, HOME: home },
+    encoding: "utf8",
+  });
+
+  const result = JSON.parse(stdout);
+  const candidateText = JSON.stringify(result.candidates).toLowerCase();
+
+  assert.equal(result.bundle_id, "fundraising-test");
+  assert.ok(Array.isArray(result.candidates));
+  assert.doesNotMatch(candidateText, /suggestion mode|naturally type|conversation summary/);
+});

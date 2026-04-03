@@ -1,0 +1,211 @@
+{
+  "bundle_id": "fundraising-workflows",
+  "title": "Fundraising Workflow Bundle",
+  "fabric": {
+    "repo": "https://github.com/unbrowse-ai/foundry",
+    "skill": "foundry"
+  },
+  "bootstrap_skill": "find-skills",
+  "skills": [
+    {
+      "name": "vc-rolodex",
+      "source_path": "~/.hermes/skills/vc-rolodex/SKILL.md"
+    },
+    {
+      "name": "parallel-follower-commit-gathering",
+      "source_path": "~/.hermes/skills/fundraising/parallel-follower-commit-gathering/SKILL.md"
+    },
+    {
+      "name": "safe-batch-docs",
+      "source_path": "~/.hermes/skills/fundraising/safe-batch-docs/SKILL.md"
+    },
+    {
+      "name": "gmail-drafts-system",
+      "source_path": "~/.hermes/skills/fundraising/gmail-drafts-system/SKILL.md"
+    },
+    {
+      "name": "vc-email-research",
+      "source_path": "~/.hermes/skills/fundraising/vc-email-research/SKILL.md"
+    },
+    {
+      "name": "investor-outreach",
+      "source_path": "~/.agents/skills/investor-outreach/SKILL.md"
+    },
+    {
+      "name": "unbrowse-funnel-metrics",
+      "source_path": "~/.agents/skills/unbrowse-funnel-metrics/SKILL.md"
+    }
+  ],
+  "dependency_graph": {
+    "nodes": [
+      {
+        "skill": "foundry",
+        "provides": ["workflow-bundle-fabrication", "candidate-skill-discovery", "host-memory-routing"],
+        "requires": ["workflow-history-mining", "workflow-sharing", "workflow-indexing"],
+        "alternatives": []
+      },
+      {
+        "skill": "vc-rolodex",
+        "provides": ["crm-truth", "relationship-state"],
+        "requires": [],
+        "alternatives": []
+      },
+      {
+        "skill": "parallel-follower-commit-gathering",
+        "provides": ["follower-commit-strategy", "lead-pressure-process"],
+        "requires": ["crm-truth"],
+        "alternatives": []
+      },
+      {
+        "skill": "safe-batch-docs",
+        "provides": ["safe-paper", "cp-safe-paper"],
+        "requires": ["follower-commit-strategy"],
+        "alternatives": []
+      },
+      {
+        "skill": "investor-outreach",
+        "provides": ["investor-messaging"],
+        "requires": ["crm-truth"],
+        "alternatives": []
+      },
+      {
+        "skill": "gmail-drafts-system",
+        "provides": ["draft-queue"],
+        "requires": ["investor-messaging"],
+        "alternatives": []
+      },
+      {
+        "skill": "unbrowse-funnel-metrics",
+        "provides": ["investor-proof-pack"],
+        "requires": [],
+        "alternatives": []
+      },
+      {
+        "skill": "vc-email-research",
+        "provides": ["net-new-email-fill"],
+        "requires": [],
+        "alternatives": []
+      }
+    ]
+  },
+  "routes": [
+    {
+      "when": "the request is about who to message, investor relationship state, warm paths, or CRM truth",
+      "call": "vc-rolodex"
+    },
+    {
+      "when": "the request is about follower commits, parallel fundraising, CP clauses, or not waiting on the lead",
+      "call": "parallel-follower-commit-gathering"
+    },
+    {
+      "when": "the request is about generating or updating SAFE documents or CP variants",
+      "call": "safe-batch-docs"
+    },
+    {
+      "when": "the request is about investor messages, follow-ups, intro asks, or diligence replies",
+      "call": "investor-outreach"
+    },
+    {
+      "when": "the request is about drafting but not sending fundraising emails",
+      "call": "gmail-drafts-system"
+    },
+    {
+      "when": "the request is about investor metrics, growth, funnel, retention, or proof points",
+      "call": "unbrowse-funnel-metrics"
+    },
+    {
+      "when": "the request is about filling missing investor emails for net-new outreach",
+      "call": "vc-email-research"
+    }
+  ],
+  "history": {
+    "sources": [
+      "~/.codex/history.jsonl",
+      "~/.codex/session_index.jsonl",
+      "~/.codex/archived_sessions",
+      "~/.claude/projects",
+      "~/.hermes/sessions"
+    ],
+    "skills": [
+      {
+        "skill": "vc-rolodex",
+        "min_hits": 2,
+        "matchers": [
+          "who should i message",
+          "warm intro",
+          "vc status",
+          "pipeline status",
+          "fundraise status"
+        ]
+      },
+      {
+        "skill": "parallel-follower-commit-gathering",
+        "min_hits": 2,
+        "matchers": [
+          "safe for shares",
+          "parallel fundraising",
+          "follower checks",
+          "angel commits",
+          "dont wait for the lead"
+        ]
+      },
+      {
+        "skill": "safe-batch-docs",
+        "min_hits": 2,
+        "matchers": [
+          "safe docs",
+          "safe batch",
+          "cp clause",
+          "term sheet",
+          "attach the safe"
+        ]
+      },
+      {
+        "skill": "investor-outreach",
+        "min_hits": 2,
+        "matchers": [
+          "draft investor email",
+          "warm intro blurb",
+          "follow up with investor",
+          "diligence update"
+        ]
+      },
+      {
+        "skill": "gmail-drafts-system",
+        "min_hits": 2,
+        "matchers": [
+          "gmail draft",
+          "draft only",
+          "do not send",
+          "queue drafts"
+        ]
+      },
+      {
+        "skill": "unbrowse-funnel-metrics",
+        "min_hits": 2,
+        "matchers": [
+          "investor metrics",
+          "funnel metrics",
+          "retention",
+          "dau wau mau",
+          "proof pack"
+        ]
+      }
+    ]
+  },
+  "tool_routing": {
+    "sources": [
+      "~/.codex/tool-traces.jsonl",
+      "~/.codex/tool-traces"
+    ]
+  },
+  "share": {
+    "transport": "files",
+    "manifest_path": "/.well-known/skill-bundles/fundraising-workflows/share.json"
+  },
+  "index": {
+    "slug": "fundraising-workflows",
+    "summary": "Route fundraising ops across CRM truth, follower commits, SAFE docs, investor messaging, and metrics proof.",
+    "tags": ["fundraising", "vc", "safe", "investor-outreach", "memory-routing", "foundry"]
+  }
+}

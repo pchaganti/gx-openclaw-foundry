@@ -97,6 +97,7 @@ function titleCase(value) {
 }
 
 function isInstructionDump(text) {
+  if (text.length < 30) return true;
   const normalized = normalizeText(text);
   return normalized.includes("agents.md instructions")
     || normalized.includes("<instructions>")
@@ -105,7 +106,90 @@ function isInstructionDump(text) {
     || normalized.includes("any running unified exec processes were terminated")
     || normalized.includes("### available skills")
     || normalized.includes("### how to use skills")
-    || normalized.includes("--- project-doc ---");
+    || normalized.includes("--- project-doc ---")
+    || normalized.includes("<task-notification>")
+    || normalized.includes("<command-message>")
+    || normalized.includes("<command-name>")
+    || normalized.includes("<local-command-stdout>")
+    || normalized.includes("<bash-stdout>")
+    || normalized.includes("<bash-stderr>")
+    || normalized.includes("<teammate-message")
+    || normalized.includes("[request interrupted by user")
+    || normalized.includes("stop hook feedback:")
+    || normalized.includes("stop hook error:")
+    || normalized.includes("base directory for this skill:")
+    || normalized.includes("you are a coding agent")
+    || normalized.includes("you are claude code")
+    || normalized.includes("<system-reminder>")
+    || normalized.includes("co-authored-by: claude")
+    || normalized.includes("<user-prompt-submit-hook>");
+}
+
+function discoveryScopes(preset) {
+  const scopes = [];
+
+  for (const skill of preset.skills ?? []) {
+    const name = typeof skill === "string" ? skill : String(skill?.name || skill?.skill || "");
+    const tokens = tokenize(name.replace(/-/g, " "));
+    if (tokens.length > 0) scopes.push({ phrases: [], tokens, min_overlap: 1 });
+  }
+
+  for (const route of preset.routes ?? []) {
+    const phrases = [route.when ?? ""].map(normalizeText).filter(Boolean);
+    const routeTokens = tokenize(route.when ?? "");
+    const callTokens = tokenize(String(route.call || "").replace(/-/g, " "));
+    if (phrases.length > 0 || routeTokens.length > 0) {
+      scopes.push({ phrases, tokens: routeTokens, min_overlap: Math.min(2, routeTokens.length || 0) });
+    }
+    if (callTokens.length > 0) scopes.push({ phrases: [], tokens: callTokens, min_overlap: 1 });
+  }
+
+  for (const def of preset.history?.skills ?? []) {
+    const phrases = (def.matchers ?? []).map(normalizeText).filter(Boolean);
+    const tokens = [
+      ...tokenize(String(def.skill || "").replace(/-/g, " ")),
+      ...(def.matchers ?? []).flatMap((matcher) => tokenize(matcher)),
+    ];
+    const uniqueTokens = Array.from(new Set(tokens));
+    if (phrases.length > 0 || uniqueTokens.length > 0) {
+      scopes.push({ phrases, tokens: uniqueTokens, min_overlap: Math.min(2, uniqueTokens.length || 0) });
+    }
+  }
+
+  return scopes;
+}
+
+function filterTextsForPreset(preset, texts) {
+  const exactMatchers = (preset.history?.skills ?? [])
+    .flatMap((def) => def.matchers ?? [])
+    .map(normalizeText)
+    .filter(Boolean);
+  if (exactMatchers.length > 0) {
+    const exactMatches = texts.filter((text) => {
+      if (isInstructionDump(text)) return false;
+      const normalized = normalizeText(text);
+      return exactMatchers.some((matcher) => normalized.includes(matcher));
+    });
+    if (exactMatches.length > 0) return exactMatches;
+  }
+
+  const scopes = discoveryScopes(preset);
+  if (scopes.length === 0) return texts;
+
+  const filtered = texts.filter((text) => {
+    if (isInstructionDump(text)) return false;
+
+    const normalized = normalizeText(text);
+    const textTokens = new Set(tokenize(text));
+
+    return scopes.some((scope) => {
+      if (scope.phrases.some((phrase) => normalized.includes(phrase))) return true;
+      const overlap = scope.tokens.filter((token) => textTokens.has(token)).length;
+      return overlap >= (scope.min_overlap ?? Math.min(2, scope.tokens.length || 0));
+    });
+  });
+
+  return filtered.length > 0 ? filtered : texts.filter((text) => !isInstructionDump(text));
 }
 
 function buildEvidenceSnippet(text, focusTokens) {
@@ -363,9 +447,9 @@ export function discoverCandidateSkills(preset, texts, options = {}) {
   const maxCandidates = Number(options.maxCandidates ?? 8);
   const known = knownTokens(preset);
   const pairMap = new Map();
+  const scopedTexts = filterTextsForPreset(preset, texts);
 
-  for (const text of texts) {
-    if (isInstructionDump(text)) continue;
+  for (const text of scopedTexts) {
     const tokens = tokenize(text).slice(0, 6);
     if (tokens.length < 2) continue;
     const seen = new Set();

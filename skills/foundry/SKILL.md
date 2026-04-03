@@ -26,7 +26,7 @@ Do not use this skill for:
 
 Workflow:
 
-1. Run `npm run discover` to identify recurring workflow clusters.
+1. Pick the preset that matches the workflow family. The default `npm run discover` / `prepare-router` / `fabricate` scripts target `presets/unbrowse-workflows.json`, but any workflow can be mined by passing `--preset ...` directly or by using a preset-specific alias such as `npm run discover:fundraising`.
 2. Inspect `candidate-skills.json` and scaffolded candidate `SKILL.md` drafts; candidate skills now auto-install into the local host skill dir unless `--no-install` is set.
 3. Keep env-var names and secret/config locations in `references/runtime-pointers.md`; do not bake values, PII, emails, or user-specific paths into `SKILL.md`.
 4. Run `npm run prepare-router` to build the explicit action DAG and next-action prep artifacts from tool traces.
@@ -42,6 +42,7 @@ Load-bearing rules:
 - tool-routing prep should stay explicit and local before any trained router is introduced
 - bundle, share, registry, and memory outputs stay derived from the same preset
 - memory must say which skill to call, not just what to install
+- bundled skills may come from mixed sources; when one repo is not enough, declare per-skill repo/install/source pointers in the preset
 
 Install:
 
