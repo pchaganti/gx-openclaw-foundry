@@ -34,6 +34,13 @@ Foundry tracks your preferences:
 - How you typically solve problems
 - Your coding style and patterns
 
+### 4. History-Mined Skill Discovery
+When local chat history shows the same workflow repeatedly, Foundry can:
+- cluster recurring request shapes
+- emit `candidate-skills.json` with evidence and repeat counts
+- scaffold first-pass `SKILL.md` candidates for the strongest clusters
+- rerun on an interval so new workflow patterns surface without manual auditing
+
 ## Proactive Features
 
 ### Auto-Context Injection
@@ -222,6 +229,20 @@ Install these patterns?"
     }
   }
 }
+```
+
+## Local Discovery Loop
+
+Run once:
+
+```bash
+npm run discover
+```
+
+Run occasionally in the background:
+
+```bash
+npm run discover:watch
 ```
 
 ## Privacy

@@ -1,0 +1,127 @@
+{
+  "bundle_id": "unbrowse-workflows",
+  "title": "Unbrowse Workflow Bundle",
+  "fabric": {
+    "repo": "https://github.com/lekt9/openclaw-foundry",
+    "skill": "foundry"
+  },
+  "repo": "https://github.com/unbrowse-ai/unbrowse",
+  "bootstrap_skill": "find-skills",
+  "skills": [
+    "history-skill-miner",
+    "docs-release-sync",
+    "skill-surface-ship",
+    "main-actions-triage"
+  ],
+  "dependency_graph": {
+    "nodes": [
+      {
+        "skill": "foundry",
+        "provides": ["workflow-bundle-fabrication", "candidate-skill-discovery", "host-memory-routing"],
+        "requires": ["workflow-history-mining", "workflow-sharing", "workflow-indexing"],
+        "alternatives": []
+      },
+      {
+        "skill": "history-skill-miner",
+        "provides": ["workflow-history-mining"],
+        "requires": [],
+        "alternatives": []
+      },
+      {
+        "skill": "docs-release-sync",
+        "provides": ["workflow-doc-sync"],
+        "requires": [],
+        "alternatives": []
+      },
+      {
+        "skill": "skill-surface-ship",
+        "provides": ["workflow-sharing", "workflow-indexing"],
+        "requires": [],
+        "alternatives": []
+      },
+      {
+        "skill": "main-actions-triage",
+        "provides": ["main-ci-triage"],
+        "requires": [],
+        "alternatives": []
+      }
+    ]
+  },
+  "routes": [
+    {
+      "when": "the request is about turning repeated local workflows into skills",
+      "call": "history-skill-miner"
+    },
+    {
+      "when": "the request is about README, changelog, or release-note alignment",
+      "call": "docs-release-sync"
+    },
+    {
+      "when": "the request is about skill install, publish, packaging, or sync surface changes",
+      "call": "skill-surface-ship"
+    },
+    {
+      "when": "the request is about blockers or status on main CI or deploy runs",
+      "call": "main-actions-triage"
+    }
+  ],
+  "history": {
+    "sources": [
+      "~/.codex/history.jsonl",
+      "~/.codex/session_index.jsonl",
+      "~/.codex/archived_sessions"
+    ],
+    "skills": [
+      {
+        "skill": "history-skill-miner",
+        "min_hits": 2,
+        "matchers": [
+          "repeated local workflows",
+          "turn repeated local workflows into skills",
+          "mine local codex chat history",
+          "history skill"
+        ]
+      },
+      {
+        "skill": "docs-release-sync",
+        "min_hits": 2,
+        "matchers": [
+          "readme",
+          "changelog",
+          "release notes",
+          "docs alignment"
+        ]
+      },
+      {
+        "skill": "skill-surface-ship",
+        "min_hits": 2,
+        "matchers": [
+          "skills add",
+          "skill install",
+          "skill publish",
+          "skill repo",
+          "skill sync"
+        ]
+      },
+      {
+        "skill": "main-actions-triage",
+        "min_hits": 2,
+        "matchers": [
+          "github actions",
+          "main ci",
+          "blockers on main",
+          "deploy runs"
+        ]
+      }
+    ]
+  },
+  "share": {
+    "transport": "files",
+    "manifest_path": "/.well-known/skill-bundles/unbrowse-workflows/share.json"
+  },
+  "index": {
+    "slug": "unbrowse-workflows",
+    "summary": "Develop, discover, share, and route Unbrowse workflow skills as one portable bundle.",
+    "tags": ["unbrowse", "skills", "workflow-bundle", "memory-routing", "foundry"]
+  }
+}

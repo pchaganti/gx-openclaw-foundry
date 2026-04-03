@@ -137,6 +137,17 @@ This is **recursive self-improvement** — each capability makes acquiring the n
 
 ## Features
 
+### Periodic Skill Discovery
+- Scans local Codex history for recurring workflow shapes
+- Emits `candidate-skills.json` with evidence and repeat counts
+- Scaffolds first-pass candidate `SKILL.md` files for high-signal clusters
+- Can run once or in watch mode for occasional rediscovery
+
+### Bundle Fabrication
+- Emits `bundle.json`, `share.json`, `registry-entry.json`, and host-memory snippets from one preset
+- Writes executable routing into `AGENTS.md`, `CLAUDE.md`, or `MEMORY.md`
+- Keeps entry skill, child skills, dependency DAG, share metadata, and routing in one source of truth
+
 ### Self-Writing Code Generation
 - Writes OpenClaw extensions with tools and hooks
 - Generates API skills following AgentSkills format with YAML frontmatter
@@ -210,6 +221,31 @@ Add to `~/.openclaw/openclaw.json`:
 Then restart:
 ```bash
 openclaw gateway restart
+```
+
+## Bundle + Discovery Commands
+
+Run once:
+
+```bash
+npm run discover
+npm run fabricate
+```
+
+Occasional background discovery:
+
+```bash
+npm run discover:watch
+```
+
+One-shot with host memory write:
+
+```bash
+node scripts/fabricate-bundle.mjs \
+  --preset presets/unbrowse-workflows.json \
+  --out dist \
+  --host claude \
+  --scope agent
 ```
 
 ### Option C: GitHub Source

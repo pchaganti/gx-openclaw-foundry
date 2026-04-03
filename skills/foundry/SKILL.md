@@ -1,6 +1,6 @@
 ---
 name: foundry
-description: Self-writing meta-extension that forges new capabilities — researches docs, writes extensions, tools, hooks, and skills
+description: Self-writing meta-extension that forges new capabilities — researches docs, discovers repeated workflows, scaffolds candidate skills, writes extensions/tools/hooks/skills, and routes them through memory
 homepage: https://getfoundry.app
 user-invocable: true
 metadata: {"openclaw":{"requires":{"bins":["node"]},"repository":"github:lekt9/openclaw-foundry"}}
@@ -84,10 +84,12 @@ Full configuration options in `~/.openclaw/openclaw.json`:
 Foundry is an AI-powered development agent that can:
 
 1. **Research** — Fetch and understand OpenClaw documentation on demand
-2. **Write Extensions** — Generate new tools and hooks for OpenClaw
-3. **Write Skills** — Create ClawHub-compatible skill packages
-4. **Self-Modify** — Add new capabilities to itself
-5. **Learn** — Record patterns from failures and successes
+2. **Discover Skills** — Periodically scan chat history and identify repeated workflows worth promoting
+3. **Write Extensions** — Generate new tools and hooks for OpenClaw
+4. **Write Skills** — Create ClawHub-compatible skill packages
+5. **Fabricate Bundles** — Emit share/index/host-memory artifacts for a reusable skill bundle
+6. **Self-Modify** — Add new capabilities to itself
+7. **Learn** — Record patterns from failures and successes
 
 ## Tools
 
@@ -117,6 +119,8 @@ Foundry is an AI-powered development agent that can:
 | `foundry_extend_self` | Add new capability to Foundry itself |
 | `foundry_learnings` | View learned patterns and insights |
 | `foundry_list` | List all written artifacts |
+| `scripts/discover-skill-candidates.mjs` | Scan local history and scaffold candidate skills |
+| `scripts/fabricate-bundle.mjs` | Emit bundle/share/index/memory artifacts plus candidate skill report |
 
 ### Marketplace
 
