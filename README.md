@@ -15,6 +15,12 @@ Foundry turns repeated workflows into reusable skill bundles. Point it at your l
 3. fabricate bundle/share/index/memory artifacts from one preset
 
 It also preps the local Phase 2 routing layer:
+Discovered candidate skills auto-install into the local host skill dir by default:
+- Codex: `$CODEX_HOME/skills` or `~/.codex/skills`
+- Claude: `~/.claude/skills`
+- Each mined skill now gets `references/runtime-pointers.md` with sanitized env-var names and secret/config locations only; values, emails, and user-specific paths stay out of `SKILL.md`.
+
+It also preps the local Phase 2 routing layer:
 - ingest tool trace sessions
 - build an explicit action DAG
 - emit next-action training examples from real tool sequences
@@ -32,6 +38,12 @@ Watch for new recurring workflows:
 
 ```bash
 npm run discover:watch
+```
+
+Skip local auto-install:
+
+```bash
+node scripts/discover-skill-candidates.mjs --preset presets/unbrowse-workflows.json --no-install
 ```
 
 Write host memory in the same pass:
@@ -328,6 +340,17 @@ Workflow:
 
 Foundry only surfaces what's repeated AND not yet automated.
 
+=======
+Pin the install target explicitly:
+
+```bash
+node scripts/fabricate-bundle.mjs \
+  --preset presets/unbrowse-workflows.json \
+  --out dist \
+  --install-host codex
+```
+
+>>>>>>> 68fa740 (Enable auto-install for mined candidate skills)
 ## Outputs
 
 Foundry writes:
@@ -341,6 +364,8 @@ Foundry writes:
 - `dist/unbrowse-workflows/share.json`
 - `dist/unbrowse-workflows/registry-entry.json`
 - `dist/unbrowse-workflows/hosts/<host>/<file>`
+
+Foundry also installs discovered candidate skills into the active local host by default.
 
 Host targets:
 - Codex: `AGENTS.md`

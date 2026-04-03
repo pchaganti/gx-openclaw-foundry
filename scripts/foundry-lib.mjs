@@ -1,6 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import {
+  compactSourceText,
+  discoverCandidateSkills,
+  installCandidateSkills,
+  normalizeText,
+  sanitizeEvidenceText,
+  writeCandidateSkillScaffold,
+} from "./foundry-candidates.mjs";
 
 export const MARKER_BEGIN = "<!-- FOUNDRY_BUNDLE:BEGIN -->";
 export const MARKER_END = "<!-- FOUNDRY_BUNDLE:END -->";
@@ -9,15 +17,6 @@ export const HOST_FILES = {
   claude: "CLAUDE.md",
   openclaw: "MEMORY.md",
 };
-
-const STOPWORDS = new Set([
-  "about", "after", "agent", "align", "an", "and", "are", "around", "auto", "before", "between", "blockers",
-  "build", "bundle", "call", "can", "change", "chat", "ci", "codex", "create", "current", "deploy", "docs",
-  "for", "from", "get", "github", "have", "history", "host", "how", "into", "just", "keep", "local", "main",
-  "make", "memory", "note", "now", "package", "publish", "release", "repo", "request", "route", "routing",
-  "same", "share", "should", "skill", "skills", "surface", "sync", "that", "the", "their", "then", "this",
-  "through", "turn", "update", "use", "user", "when", "with", "workflow", "workflows", "write",
-]);
 
 export function parseArgs(argv) {
   const flags = {};
@@ -208,10 +207,6 @@ export function expandHome(inputPath) {
   return path.join(resolveHome(), inputPath.slice(2));
 }
 
-function normalizeText(text) {
-  return text.replace(/\s+/g, " ").trim().toLowerCase();
-}
-
 function parseHistoryFile(filePath) {
   const text = readFileSync(filePath, "utf8");
   return text
@@ -225,7 +220,7 @@ function parseHistoryFile(filePath) {
         return [];
       }
     })
-    .map(normalizeText)
+    .map(compactSourceText)
     .filter(Boolean);
 }
 
@@ -275,7 +270,10 @@ export function loadHistoryTexts(preset) {
 export function scoreHistoryMatches(preset, texts) {
   return (preset.history?.skills ?? []).map((def) => {
     const matchers = def.matchers.map((matcher) => normalizeText(matcher));
-    const evidence = texts.filter((text) => matchers.some((matcher) => text.includes(matcher))).slice(0, 8);
+    const evidence = texts
+      .filter((text) => matchers.some((matcher) => normalizeText(text).includes(matcher)))
+      .slice(0, 8)
+      .map(sanitizeEvidenceText);
     return {
       skill: def.skill,
       min_hits: def.min_hits,
@@ -454,133 +452,15 @@ export function buildToolRoutingReport(preset) {
   };
 }
 
-function tokenize(text) {
-  return Array.from(new Set(
-    normalizeText(text)
-      .split(/[^a-z0-9]+/g)
-      .filter((token) => token.length >= 4 && !STOPWORDS.has(token)),
-  ));
-}
-
-function knownTokens(preset) {
-  const tokens = new Set();
-  for (const route of preset.routes ?? []) {
-    for (const token of tokenize(route.when ?? "")) tokens.add(token);
-  }
-  for (const def of preset.history?.skills ?? []) {
-    for (const matcher of def.matchers ?? []) {
-      for (const token of tokenize(matcher)) tokens.add(token);
-    }
-  }
-  return tokens;
-}
-
-function titleCase(value) {
-  return value.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
-}
-
-function renderCandidateSkill(candidate) {
-  const triggerPhrases = candidate.tokens.map((token) => `- requests mention \`${token}\``);
-  return `---
-name: ${candidate.slug}
-description: ${candidate.summary}
-user-invocable: true
----
-
-# ${candidate.title}
-
-Core job:
-
-- ${candidate.summary}
-
-Use this skill when:
-
-- the same workflow keeps recurring in chat history
-${triggerPhrases.join("\n")}
-- the user wants the workflow packaged into a reusable skill or bundle
-
-Do not use this skill for:
-
-- one-off requests that do not repeat
-- adjacent tasks that only share one token but not the workflow
-- publishing or routing work with no need to define the workflow itself
-
-Workflow:
-
-1. Inspect the repeated request shape from the candidate evidence.
-2. Reduce it to one core job.
-3. Decide what belongs in \`SKILL.md\`, \`references/\`, and \`scripts/\`.
-4. Generate the narrow skill surface and connect it to Foundry bundle routing if needed.
-
-Load-bearing rules:
-
-- one skill, one core job
-- keep trigger language in the description
-- move durable detail into references or scripts
-- keep only the constraints that change behavior
-`;
-}
-
-export function discoverCandidateSkills(preset, texts, options = {}) {
-  const threshold = Number(options.threshold ?? 3);
-  const maxCandidates = Number(options.maxCandidates ?? 8);
-  const known = knownTokens(preset);
-  const pairMap = new Map();
-
-  for (const text of texts) {
-    const tokens = tokenize(text).slice(0, 6);
-    if (tokens.length < 2) continue;
-    const seen = new Set();
-    for (let i = 0; i < tokens.length; i += 1) {
-      for (let j = i + 1; j < tokens.length; j += 1) {
-        const pair = [tokens[i], tokens[j]].sort();
-        const key = pair.join("|");
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const entry = pairMap.get(key) ?? { tokens: pair, count: 0, evidence: [] };
-        entry.count += 1;
-        if (entry.evidence.length < 6) entry.evidence.push(text);
-        pairMap.set(key, entry);
-      }
-    }
-  }
-
-  const raw = Array.from(pairMap.values())
-    .filter((entry) => entry.count >= threshold)
-    .filter((entry) => entry.tokens.some((token) => !known.has(token)))
-    .sort((a, b) => b.count - a.count);
-
-  const candidates = [];
-  const usedSlugs = new Set();
-  for (const entry of raw) {
-    const slug = entry.tokens.slice(0, 3).join("-");
-    if (usedSlugs.has(slug)) continue;
-    usedSlugs.add(slug);
-    candidates.push({
-      slug,
-      title: titleCase(slug),
-      summary: `Handle the recurring ${entry.tokens.join(" + ")} workflow as a reusable skill.`,
-      tokens: entry.tokens,
-      match_count: entry.count,
-      evidence: entry.evidence,
-    });
-    if (candidates.length >= maxCandidates) break;
-  }
-
-  return {
-    bundle_id: preset.bundle_id,
-    generated_at: new Date().toISOString(),
-    threshold,
-    candidates,
-  };
-}
-
 export function writeBundleArtifacts(preset, outRoot, options = {}) {
   const bundleDir = path.join(outRoot, preset.bundle_id);
   const historyReport = buildHistoryReport(preset);
   const texts = historyReport ? loadHistoryTexts(preset) : [];
   const candidateReport = historyReport ? discoverCandidateSkills(preset, texts, options) : null;
   const toolRoutingReport = buildToolRoutingReport(preset);
+  const installResult = candidateReport && options.install !== false
+    ? installCandidateSkills(candidateReport, { host: options.installHost })
+    : null;
 
   writeJson(path.join(bundleDir, "bundle.json"), buildBundleManifest(preset));
   writeJson(path.join(bundleDir, "share.json"), buildShareManifest(preset));
@@ -594,7 +474,7 @@ export function writeBundleArtifacts(preset, outRoot, options = {}) {
   if (candidateReport) {
     writeJson(path.join(bundleDir, "candidate-skills.json"), candidateReport);
     for (const candidate of candidateReport.candidates) {
-      writeText(path.join(bundleDir, "candidates", candidate.slug, "SKILL.md"), renderCandidateSkill(candidate));
+      writeCandidateSkillScaffold(path.join(bundleDir, "candidates", candidate.slug), candidate);
     }
   }
 
@@ -617,6 +497,7 @@ export function writeBundleArtifacts(preset, outRoot, options = {}) {
     history_report: historyReport ? path.join(bundleDir, "history-report.json") : null,
     tool_routing_report: toolRoutingReport ? path.join(bundleDir, "tool-routing-report.json") : null,
     candidate_report: candidateReport ? path.join(bundleDir, "candidate-skills.json") : null,
+    install_result: installResult,
   };
 }
 
