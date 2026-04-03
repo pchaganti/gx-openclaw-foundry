@@ -25,7 +25,7 @@ Based on recent research:
 - HexMachina (artifact-centric learning)
 - ADAS (ICLR 2025, meta-agent search)
 
-**Open source:** https://github.com/lekt9/openclaw-foundry
+**Open source:** https://github.com/unbrowse-ai/foundry
 
 Token: $FDRY on Solana (marketplace uses x402 for agent-to-agent payments)
 
@@ -58,7 +58,7 @@ We implemented the findings from recent self-improving agent papers into an open
 
 Built on OpenClaw (open-source agent framework).
 
-GitHub: https://github.com/lekt9/openclaw-foundry
+GitHub: https://github.com/unbrowse-ai/foundry
 
 Happy to discuss the architecture decisions and how we adapted the research.
 
@@ -90,5 +90,5 @@ Built an agent that actually adapts to you instead of the other way around.
 Traditional AI: same behavior every time
 Foundry: learns your patterns, writes code to match
 
-Open source: https://github.com/lekt9/openclaw-foundry
+Open source: https://github.com/unbrowse-ai/foundry
 Token: $FDRY (Solana) for marketplace payments

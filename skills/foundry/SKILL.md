@@ -3,7 +3,7 @@ name: foundry
 description: Self-writing meta-extension that forges new capabilities — researches docs, discovers repeated workflows, scaffolds candidate skills, writes extensions/tools/hooks/skills, and routes them through memory
 homepage: https://getfoundry.app
 user-invocable: true
-metadata: {"openclaw":{"requires":{"bins":["node"]},"repository":"github:lekt9/openclaw-foundry"}}
+metadata: {"openclaw":{"requires":{"bins":["node"]},"repository":"github:unbrowse-ai/foundry"}}
 ---
 
 # Foundry
@@ -49,7 +49,7 @@ Full configuration options in `~/.openclaw/openclaw.json`:
     "entries": {
       "foundry": {
         "enabled": true,
-        "source": "github:lekt9/openclaw-foundry",
+        "source": "github:unbrowse-ai/foundry",
         "config": {
           "autoLearn": true,
           "sources": {
@@ -189,5 +189,5 @@ Foundry validates all generated code before deployment:
 
 ## Links
 
-- [GitHub](https://github.com/lekt9/openclaw-foundry)
+- [GitHub](https://github.com/unbrowse-ai/foundry)
 - [Foundry Marketplace](https://api.claw.getfoundry.app)

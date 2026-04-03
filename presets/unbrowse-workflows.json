@@ -2,7 +2,7 @@
   "bundle_id": "unbrowse-workflows",
   "title": "Unbrowse Workflow Bundle",
   "fabric": {
-    "repo": "https://github.com/lekt9/openclaw-foundry",
+    "repo": "https://github.com/unbrowse-ai/foundry",
     "skill": "foundry"
   },
   "repo": "https://github.com/unbrowse-ai/unbrowse",

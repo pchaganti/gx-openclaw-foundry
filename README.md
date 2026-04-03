@@ -258,7 +258,7 @@ Add to `~/.openclaw/openclaw.json`:
     "entries": {
       "foundry": {
         "enabled": true,
-        "source": "github:lekt9/openclaw-foundry"
+        "source": "github:unbrowse-ai/foundry"
       }
     }
   }
@@ -268,13 +268,13 @@ Add to `~/.openclaw/openclaw.json`:
 ### Option D: Nix (Reproducible)
 
 ```bash
-nix run github:lekt9/openclaw-foundry
+nix run github:unbrowse-ai/foundry
 ```
 
 ### Option E: Manual Clone
 
 ```bash
-git clone https://github.com/lekt9/openclaw-foundry ~/.openclaw/extensions/foundry
+git clone https://github.com/unbrowse-ai/foundry ~/.openclaw/extensions/foundry
 cd ~/.openclaw/extensions/foundry && npm install
 ```
 
@@ -293,7 +293,7 @@ Full config options:
     "entries": {
       "foundry": {
         "enabled": true,
-        "source": "github:lekt9/openclaw-foundry",
+        "source": "github:unbrowse-ai/foundry",
         "config": {
           "autoLearn": true,
           "sources": {

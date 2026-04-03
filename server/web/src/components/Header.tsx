@@ -28,7 +28,7 @@ export function Header() {
             Whitepaper
           </Link>
           <a
-            href="https://github.com/lekt9/openclaw-foundry"
+            href="https://github.com/unbrowse-ai/foundry"
             className="nav-link"
             target="_blank"
             rel="noopener noreferrer"

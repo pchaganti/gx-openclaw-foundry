@@ -427,7 +427,7 @@ export function Whitepaper() {
             <a href="https://openclaw.ai" target="_blank" rel="noopener noreferrer">
               OpenClaw
             </a>
-            <a href="https://github.com/lekt9/openclaw-foundry" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/unbrowse-ai/foundry" target="_blank" rel="noopener noreferrer">
               Open Source on GitHub
             </a>
             <a href="https://dexscreener.com/solana/fdry" target="_blank" rel="noopener noreferrer">

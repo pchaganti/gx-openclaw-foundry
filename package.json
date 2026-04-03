@@ -26,7 +26,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lekt9/openclaw-foundry"
+    "url": "https://github.com/unbrowse-ai/foundry"
   },
   "homepage": "https://getfoundry.app",
   "moltbot": {

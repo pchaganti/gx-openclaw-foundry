@@ -10,7 +10,7 @@ Show HN: Foundry – A self-writing AI agent that learns how you work and upgrad
 
 ## URL
 
-https://github.com/lekt9/openclaw-foundry
+https://github.com/unbrowse-ai/foundry
 
 ## Text (if text post)
 
@@ -37,7 +37,7 @@ Papers that back this up:
 - HexMachina: artifact-centric learning beats prompt-stuffing
 - ADAS (ICLR 2025): meta-agents outperform hand-designed ones
 
-Open source: https://github.com/lekt9/openclaw-foundry
+Open source: https://github.com/unbrowse-ai/foundry
 
 $FDRY token for marketplace payments (x402 protocol — HTTP 402 + Solana USDC)
 

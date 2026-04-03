@@ -56,7 +56,7 @@ Repeat
 
 ### Links
 
-- **GitHub:** github.com/lekt9/openclaw-foundry (open source)
+- **GitHub:** github.com/unbrowse-ai/foundry (open source)
 - **Token:** $FDRY on Solana
 - **Marketplace:** claw.getfoundry.app (x402 protocol)
 
