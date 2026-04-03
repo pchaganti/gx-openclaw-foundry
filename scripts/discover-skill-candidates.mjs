@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import path from "node:path";
-import { discoverCandidateSkills, loadHistoryTexts, parseArgs, readPreset, validatePreset } from "./foundry-lib.mjs";
+import { discoverCandidateSkills, installCandidateSkills, loadHistoryTexts, parseArgs, readPreset, validatePreset } from "./foundry-lib.mjs";
 
 function runOnce(preset, threshold) {
   const texts = loadHistoryTexts(preset);
@@ -15,15 +15,22 @@ async function main() {
   const intervalMs = Number(flags.interval || 3_600_000);
   const threshold = Number(flags.threshold || 3);
   const outPath = flags.out ? path.resolve(String(flags.out)) : "";
+  const install = flags.install !== false && !flags["no-install"];
+  const installHost = String(flags["install-host"] || "auto");
 
   const run = async () => {
     const result = runOnce(preset, threshold);
+    const installResult = install ? installCandidateSkills(result, { host: installHost }) : null;
+    const payload = {
+      ...result,
+      install_result: installResult,
+    };
     if (outPath) {
       const { mkdir, writeFile } = await import("node:fs/promises");
       await mkdir(path.dirname(outPath), { recursive: true });
-      await writeFile(outPath, `${JSON.stringify(result, null, 2)}\n`);
+      await writeFile(outPath, `${JSON.stringify(payload, null, 2)}\n`);
     }
-    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
+    process.stdout.write(JSON.stringify(payload, null, 2) + "\n");
   };
 
   await run();

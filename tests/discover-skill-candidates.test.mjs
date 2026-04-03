@@ -40,9 +40,12 @@ test("discovers recurring candidate skills from history and writes report", () =
 
   const result = JSON.parse(stdout);
   const written = JSON.parse(readFileSync(outFile, "utf8"));
+  const installedSkill = path.join(home, ".codex", "skills", result.candidates[0].slug, "SKILL.md");
 
   assert.equal(result.bundle_id, "unbrowse-workflows");
   assert.ok(result.candidates.length >= 1);
   assert.deepEqual(written.candidates, result.candidates);
   assert.match(result.candidates[0].summary, /recurring/i);
+  assert.equal(result.install_result.host, "codex");
+  assert.match(readFileSync(installedSkill, "utf8"), /generated_by: foundry/);
 });

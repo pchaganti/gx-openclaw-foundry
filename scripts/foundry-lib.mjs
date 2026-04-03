@@ -40,6 +40,10 @@ export function resolveHome() {
   return process.env.HOME || os.homedir();
 }
 
+export function resolveCodexHome() {
+  return process.env.CODEX_HOME || path.join(resolveHome(), ".codex");
+}
+
 export function readPreset(presetPath) {
   if (!presetPath) throw new Error("--preset is required");
   return JSON.parse(readFileSync(path.resolve(presetPath), "utf8"));
@@ -485,6 +489,9 @@ function renderCandidateSkill(candidate) {
 name: ${candidate.slug}
 description: ${candidate.summary}
 user-invocable: true
+generated_by: foundry
+candidate_skill: true
+match_count: ${candidate.match_count}
 ---
 
 # ${candidate.title}
@@ -519,6 +526,92 @@ Load-bearing rules:
 - move durable detail into references or scripts
 - keep only the constraints that change behavior
 `;
+}
+
+function normalizeInstallHost(host) {
+  if (!host || host === "auto") {
+    if (process.env.CODEX_HOME || existsSync(resolveCodexHome())) return "codex";
+    if (existsSync(path.join(resolveHome(), ".claude"))) return "claude";
+    return "codex";
+  }
+  if (host === "codex" || host === "claude" || host === "off") return host;
+  throw new Error(`Unsupported install host: ${host}`);
+}
+
+function candidateInstallRootFor(host) {
+  if (host === "codex") return path.join(resolveCodexHome(), "skills");
+  if (host === "claude") return path.join(resolveHome(), ".claude", "skills");
+  return null;
+}
+
+function isFoundryManagedSkill(text) {
+  return /(^|\n)generated_by:\s*foundry\s*(\n|$)/.test(text);
+}
+
+export function installCandidateSkills(candidateReport, options = {}) {
+  if (!candidateReport) {
+    return {
+      host: null,
+      target_dir: null,
+      installed: [],
+      updated: [],
+      skipped: [],
+    };
+  }
+
+  const host = normalizeInstallHost(String(options.host || "auto"));
+  if (host === "off") {
+    return {
+      host,
+      target_dir: null,
+      installed: [],
+      updated: [],
+      skipped: candidateReport.candidates.map((candidate) => ({
+        skill: candidate.slug,
+        reason: "install-disabled",
+        path: null,
+      })),
+    };
+  }
+
+  const targetDir = candidateInstallRootFor(host);
+  const installed = [];
+  const updated = [];
+  const skipped = [];
+
+  for (const candidate of candidateReport.candidates) {
+    const skillDir = path.join(targetDir, candidate.slug);
+    const skillFile = path.join(skillDir, "SKILL.md");
+    const nextText = renderCandidateSkill(candidate);
+
+    mkdirSync(skillDir, { recursive: true });
+    if (!existsSync(skillFile)) {
+      writeText(skillFile, nextText);
+      installed.push({ skill: candidate.slug, path: skillFile });
+      continue;
+    }
+
+    const existing = readFileSync(skillFile, "utf8");
+    if (existing === nextText || existing === `${nextText}\n`) {
+      skipped.push({ skill: candidate.slug, reason: "unchanged", path: skillFile });
+      continue;
+    }
+    if (!isFoundryManagedSkill(existing)) {
+      skipped.push({ skill: candidate.slug, reason: "user-owned", path: skillFile });
+      continue;
+    }
+
+    writeText(skillFile, nextText);
+    updated.push({ skill: candidate.slug, path: skillFile });
+  }
+
+  return {
+    host,
+    target_dir: targetDir,
+    installed,
+    updated,
+    skipped,
+  };
 }
 
 export function discoverCandidateSkills(preset, texts, options = {}) {
@@ -581,6 +674,9 @@ export function writeBundleArtifacts(preset, outRoot, options = {}) {
   const texts = historyReport ? loadHistoryTexts(preset) : [];
   const candidateReport = historyReport ? discoverCandidateSkills(preset, texts, options) : null;
   const toolRoutingReport = buildToolRoutingReport(preset);
+  const installResult = candidateReport && options.install !== false
+    ? installCandidateSkills(candidateReport, { host: options.installHost })
+    : null;
 
   writeJson(path.join(bundleDir, "bundle.json"), buildBundleManifest(preset));
   writeJson(path.join(bundleDir, "share.json"), buildShareManifest(preset));
@@ -617,6 +713,7 @@ export function writeBundleArtifacts(preset, outRoot, options = {}) {
     history_report: historyReport ? path.join(bundleDir, "history-report.json") : null,
     tool_routing_report: toolRoutingReport ? path.join(bundleDir, "tool-routing-report.json") : null,
     candidate_report: candidateReport ? path.join(bundleDir, "candidate-skills.json") : null,
+    install_result: installResult,
   };
 }
 

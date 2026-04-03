@@ -27,7 +27,7 @@ Do not use this skill for:
 Workflow:
 
 1. Run `npm run discover` to identify recurring workflow clusters.
-2. Inspect `candidate-skills.json` and scaffolded candidate `SKILL.md` drafts.
+2. Inspect `candidate-skills.json` and scaffolded candidate `SKILL.md` drafts; candidate skills now auto-install into the local host skill dir unless `--no-install` is set.
 3. Run `npm run prepare-router` to build the explicit action DAG and next-action prep artifacts from tool traces.
 4. Run `npm run fabricate` to emit bundle/share/index/memory artifacts together with routing prep outputs.
 5. If needed, rerun `scripts/fabricate-bundle.mjs` with `--host` and `--scope` to write host memory.

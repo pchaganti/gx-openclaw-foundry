@@ -15,6 +15,10 @@ It does three things:
 2. emit candidate skills with evidence
 3. fabricate bundle/share/index/memory artifacts from one preset
 
+Discovered candidate skills auto-install into the local host skill dir by default:
+- Codex: `$CODEX_HOME/skills` or `~/.codex/skills`
+- Claude: `~/.claude/skills`
+
 It also now preps the local Phase 2 routing layer:
 - ingest tool trace sessions
 - build an explicit action DAG
@@ -35,6 +39,12 @@ Watch for new recurring workflows:
 npm run discover:watch
 ```
 
+Skip local auto-install:
+
+```bash
+node scripts/discover-skill-candidates.mjs --preset presets/unbrowse-workflows.json --no-install
+```
+
 Write host memory in the same pass:
 
 ```bash
@@ -43,6 +53,15 @@ node scripts/fabricate-bundle.mjs \
   --out dist \
   --host claude \
   --scope agent
+```
+
+Pin the install target explicitly:
+
+```bash
+node scripts/fabricate-bundle.mjs \
+  --preset presets/unbrowse-workflows.json \
+  --out dist \
+  --install-host codex
 ```
 
 ## Outputs
@@ -58,6 +77,8 @@ Foundry writes:
 - `dist/unbrowse-workflows/share.json`
 - `dist/unbrowse-workflows/registry-entry.json`
 - `dist/unbrowse-workflows/hosts/<host>/<file>`
+
+Foundry also installs discovered candidate skills into the active local host by default.
 
 Host targets:
 - Codex: `AGENTS.md`

@@ -12,8 +12,8 @@ import {
   writeBundleArtifacts,
 } from "./foundry-lib.mjs";
 
-function runOnce(preset, outRoot, host, scope, cwd, threshold) {
-  const buildResult = writeBundleArtifacts(preset, outRoot, { threshold });
+function runOnce(preset, outRoot, host, scope, cwd, options) {
+  const buildResult = writeBundleArtifacts(preset, outRoot, options);
 
   let targetFile = null;
   if (host) {
@@ -40,9 +40,15 @@ async function main() {
   const watch = !!flags.watch;
   const intervalMs = Number(flags.interval || 3_600_000);
   const threshold = Number(flags.threshold || 3);
+  const install = flags.install !== false && !flags["no-install"];
+  const installHost = String(flags["install-host"] || host || "auto");
 
   const run = () => {
-    const result = runOnce(preset, outRoot, host, scope, cwd, threshold);
+    const result = runOnce(preset, outRoot, host, scope, cwd, {
+      threshold,
+      install,
+      installHost,
+    });
     process.stdout.write(JSON.stringify(result, null, 2) + "\n");
   };
 
