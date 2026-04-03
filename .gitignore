@@ -2,25 +2,3 @@ node_modules/
 dist/
 *.log
 .DS_Store
-
-# Local data (don't commit learnings)
-sandbox/
-
-# Marketing drafts (keep local only)
-X_ARTICLE.md
-X_THREAD.md
-DEEP_INTEGRATION_PLAN.md
-
-# Build artifacts
-tsconfig.tsbuildinfo
-result
-
-# Nix
-result
-result-*
-.direnv/
-
-# Database files
-*.db
-*.db-shm
-*.db-wal

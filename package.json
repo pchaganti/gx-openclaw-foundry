@@ -1,72 +1,16 @@
 {
-  "name": "@getfoundry/foundry-openclaw",
-  "version": "0.2.3",
-  "description": "The forge that forges itself — self-writing meta-extension for OpenClaw",
+  "name": "foundry",
+  "private": true,
   "type": "module",
-  "main": "index.ts",
   "scripts": {
-    "fabricate": "node scripts/fabricate-bundle.mjs --preset presets/unbrowse-workflows.json --out dist",
-    "mine-history": "node scripts/mine-history.mjs --preset presets/unbrowse-workflows.json",
     "discover": "node scripts/discover-skill-candidates.mjs --preset presets/unbrowse-workflows.json --out dist/unbrowse-workflows/candidate-skills.json",
     "discover:watch": "node scripts/discover-skill-candidates.mjs --preset presets/unbrowse-workflows.json --out dist/unbrowse-workflows/candidate-skills.json --watch --interval 3600000",
+    "mine-history": "node scripts/mine-history.mjs --preset presets/unbrowse-workflows.json",
+    "fabricate": "node scripts/fabricate-bundle.mjs --preset presets/unbrowse-workflows.json --out dist",
     "test": "node --test tests/*.test.mjs"
   },
-  "keywords": [
-    "openclaw",
-    "moltbot",
-    "clawdbot",
-    "foundry",
-    "self-writing",
-    "meta-extension",
-    "ai-agent",
-    "code-generation",
-    "plugin"
-  ],
-  "author": "Foundry <hello@getfoundry.app>",
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/unbrowse-ai/foundry"
-  },
-  "homepage": "https://getfoundry.app",
-  "moltbot": {
-    "extensions": [
-      "./index.ts"
-    ]
-  },
-  "openclaw": {
-    "extensions": [
-      "./index.ts"
-    ]
-  },
-  "clawdbot": {
-    "extensions": [
-      "./index.ts"
-    ]
-  },
-  "dependencies": {
-    "@solana/spl-token": "^0.3.9",
-    "@solana/web3.js": "^1.87.6",
-    "bs58": "^5.0.0",
-    "tweetnacl": "^1.0.3"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "peerDependencies": {
-    "moltbot": "*",
-    "openclaw": "*",
-    "clawdbot": "*"
-  },
-  "peerDependenciesMeta": {
-    "moltbot": {
-      "optional": true
-    },
-    "openclaw": {
-      "optional": true
-    },
-    "clawdbot": {
-      "optional": true
-    }
   }
 }
