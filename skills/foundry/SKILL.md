@@ -14,6 +14,7 @@ Use this skill when:
 
 - local chat history should be mined for recurring workflows
 - repeated workflows should become candidate skills
+- tool traces should be turned into an explicit action DAG or next-action dataset
 - a bundle should emit share/index/memory artifacts together
 - host memory should route future requests to the right skill
 
@@ -27,14 +28,16 @@ Workflow:
 
 1. Run `npm run discover` to identify recurring workflow clusters.
 2. Inspect `candidate-skills.json` and scaffolded candidate `SKILL.md` drafts.
-3. Run `npm run fabricate` to emit bundle/share/index artifacts.
-4. If needed, rerun `scripts/fabricate-bundle.mjs` with `--host` and `--scope` to write host memory.
+3. Run `npm run prepare-router` to build the explicit action DAG and next-action prep artifacts from tool traces.
+4. Run `npm run fabricate` to emit bundle/share/index/memory artifacts together with routing prep outputs.
+5. If needed, rerun `scripts/fabricate-bundle.mjs` with `--host` and `--scope` to write host memory.
 
 Load-bearing rules:
 
 - one preset is the source of truth
 - one entry skill owns the bundle-level job
 - candidate skill discovery must be evidence-backed
+- tool-routing prep should stay explicit and local before any trained router is introduced
 - bundle, share, registry, and memory outputs stay derived from the same preset
 - memory must say which skill to call, not just what to install
 

@@ -6,6 +6,7 @@
     "discover": "node scripts/discover-skill-candidates.mjs --preset presets/unbrowse-workflows.json --out dist/unbrowse-workflows/candidate-skills.json",
     "discover:watch": "node scripts/discover-skill-candidates.mjs --preset presets/unbrowse-workflows.json --out dist/unbrowse-workflows/candidate-skills.json --watch --interval 3600000",
     "mine-history": "node scripts/mine-history.mjs --preset presets/unbrowse-workflows.json",
+    "prepare-router": "node scripts/prepare-tool-routing.mjs --preset presets/unbrowse-workflows.json --out dist/unbrowse-workflows/tool-routing-report.json",
     "fabricate": "node scripts/fabricate-bundle.mjs --preset presets/unbrowse-workflows.json --out dist",
     "test": "node --test tests/*.test.mjs"
   },

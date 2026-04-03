@@ -115,6 +115,12 @@
       }
     ]
   },
+  "tool_routing": {
+    "sources": [
+      "~/.codex/tool-traces.jsonl",
+      "~/.codex/tool-traces"
+    ]
+  },
   "share": {
     "transport": "files",
     "manifest_path": "/.well-known/skill-bundles/unbrowse-workflows/share.json"

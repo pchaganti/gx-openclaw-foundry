@@ -65,6 +65,11 @@ export function validatePreset(preset) {
   if (preset.dependency_graph && !Array.isArray(preset.dependency_graph.nodes)) {
     throw new Error("dependency_graph.nodes[] required when dependency_graph exists");
   }
+  if (preset.tool_routing) {
+    if (!Array.isArray(preset.tool_routing.sources)) {
+      throw new Error("tool_routing.sources[] required when tool_routing exists");
+    }
+  }
   return preset;
 }
 
@@ -224,6 +229,21 @@ function parseHistoryFile(filePath) {
     .filter(Boolean);
 }
 
+function parseJsonlFile(filePath) {
+  const text = readFileSync(filePath, "utf8");
+  return text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .flatMap((line) => {
+      try {
+        return [JSON.parse(line)];
+      } catch {
+        return [];
+      }
+    });
+}
+
 function extractTexts(parsed) {
   if (typeof parsed?.text === "string") return [parsed.text];
   if (typeof parsed?.thread_name === "string") return [parsed.thread_name];
@@ -273,6 +293,164 @@ export function buildHistoryReport(preset) {
     bundle_id: preset.bundle_id,
     history_samples: texts.length,
     matches: scoreHistoryMatches(preset, texts),
+  };
+}
+
+export function loadToolTraceSessions(preset) {
+  const out = [];
+  for (const source of preset.tool_routing?.sources ?? []) {
+    const resolved = expandHome(source);
+    if (!existsSync(resolved)) continue;
+    if (statSync(resolved).isDirectory()) {
+      for (const entry of readdirSync(resolved).filter((name) => name.endsWith(".jsonl"))) {
+        out.push(...parseToolTraceFile(path.join(resolved, entry)));
+      }
+      continue;
+    }
+    out.push(...parseToolTraceFile(resolved));
+  }
+  return out;
+}
+
+function parseToolTraceFile(filePath) {
+  return parseJsonlFile(filePath)
+    .map(normalizeToolTraceRecord)
+    .filter(Boolean);
+}
+
+function normalizeToolTraceRecord(record) {
+  if (Array.isArray(record?.actions)) {
+    const actions = record.actions
+      .map((action, index) => normalizeToolAction(action, index))
+      .filter(Boolean);
+    if (actions.length === 0) return null;
+    return {
+      session_id: String(record.session_id || record.sessionId || `session-${Date.now()}`),
+      goal: typeof record.goal === "string" ? record.goal : "",
+      actions,
+    };
+  }
+  if (record?.type === "tool_trace" && Array.isArray(record?.payload?.actions)) {
+    const actions = record.payload.actions
+      .map((action, index) => normalizeToolAction(action, index))
+      .filter(Boolean);
+    if (actions.length === 0) return null;
+    return {
+      session_id: String(record.payload.session_id || record.payload.sessionId || `session-${Date.now()}`),
+      goal: typeof record.payload.goal === "string" ? record.payload.goal : "",
+      actions,
+    };
+  }
+  return null;
+}
+
+function normalizeToolAction(action, index) {
+  if (!action) return null;
+  const tool = action.tool || action.tool_name || action.name;
+  if (typeof tool !== "string" || tool.trim().length === 0) return null;
+  return {
+    step: Number.isFinite(action.step) ? action.step : index,
+    tool: tool.trim(),
+    status: typeof action.status === "string" ? action.status : "success",
+    domain: typeof action.domain === "string" ? action.domain : "",
+  };
+}
+
+export function buildActionDag(sessions) {
+  const nodeMap = new Map();
+  const edgeMap = new Map();
+  const goalMap = new Map();
+
+  for (const session of sessions) {
+    const actions = session.actions ?? [];
+    const goal = typeof session.goal === "string" ? session.goal : "";
+    if (actions.length > 0 && goal) {
+      const firstTool = actions[0].tool;
+      const key = `${goal}::${firstTool}`;
+      goalMap.set(key, (goalMap.get(key) ?? 0) + 1);
+    }
+    for (let i = 0; i < actions.length; i += 1) {
+      const action = actions[i];
+      const node = nodeMap.get(action.tool) ?? {
+        id: action.tool,
+        count: 0,
+        successes: 0,
+        failures: 0,
+        domains: new Set(),
+      };
+      node.count += 1;
+      if (action.status === "success") node.successes += 1;
+      else node.failures += 1;
+      if (action.domain) node.domains.add(action.domain);
+      nodeMap.set(action.tool, node);
+
+      if (i === actions.length - 1) continue;
+      const nextAction = actions[i + 1];
+      const edgeKey = `${action.tool}=>${nextAction.tool}`;
+      const edge = edgeMap.get(edgeKey) ?? {
+        from: action.tool,
+        to: nextAction.tool,
+        count: 0,
+        success_count: 0,
+        failure_count: 0,
+      };
+      edge.count += 1;
+      if (nextAction.status === "success") edge.success_count += 1;
+      else edge.failure_count += 1;
+      edgeMap.set(edgeKey, edge);
+    }
+  }
+
+  return {
+    nodes: Array.from(nodeMap.values()).map((node) => ({
+      id: node.id,
+      count: node.count,
+      successes: node.successes,
+      failures: node.failures,
+      domains: Array.from(node.domains).sort(),
+    })),
+    edges: Array.from(edgeMap.values()).sort((a, b) => b.count - a.count),
+    goal_starts: Array.from(goalMap.entries())
+      .map(([key, count]) => {
+        const [goal, first_tool] = key.split("::");
+        return { goal, first_tool, count };
+      })
+      .sort((a, b) => b.count - a.count),
+  };
+}
+
+export function buildNextActionDataset(sessions) {
+  const examples = [];
+  for (const session of sessions) {
+    const actions = session.actions ?? [];
+    for (let i = 0; i < actions.length; i += 1) {
+      examples.push({
+        session_id: session.session_id,
+        goal: session.goal,
+        current_path: actions.slice(0, i).map((action) => action.tool),
+        next_action: actions[i].tool,
+        next_status: actions[i].status,
+      });
+    }
+  }
+  return {
+    examples,
+    count: examples.length,
+  };
+}
+
+export function buildToolRoutingReport(preset) {
+  if (!preset.tool_routing) return null;
+  const sessions = loadToolTraceSessions(preset);
+  const dag = buildActionDag(sessions);
+  const dataset = buildNextActionDataset(sessions);
+  return {
+    bundle_id: preset.bundle_id,
+    session_count: sessions.length,
+    node_count: dag.nodes.length,
+    edge_count: dag.edges.length,
+    action_dag: dag,
+    next_action_dataset: dataset,
   };
 }
 
@@ -402,11 +580,17 @@ export function writeBundleArtifacts(preset, outRoot, options = {}) {
   const historyReport = buildHistoryReport(preset);
   const texts = historyReport ? loadHistoryTexts(preset) : [];
   const candidateReport = historyReport ? discoverCandidateSkills(preset, texts, options) : null;
+  const toolRoutingReport = buildToolRoutingReport(preset);
 
   writeJson(path.join(bundleDir, "bundle.json"), buildBundleManifest(preset));
   writeJson(path.join(bundleDir, "share.json"), buildShareManifest(preset));
   writeJson(path.join(bundleDir, "registry-entry.json"), buildRegistryEntry(preset));
   if (historyReport) writeJson(path.join(bundleDir, "history-report.json"), historyReport);
+  if (toolRoutingReport) {
+    writeJson(path.join(bundleDir, "tool-routing-report.json"), toolRoutingReport);
+    writeJson(path.join(bundleDir, "action-dag.json"), toolRoutingReport.action_dag);
+    writeJson(path.join(bundleDir, "next-action-dataset.json"), toolRoutingReport.next_action_dataset);
+  }
   if (candidateReport) {
     writeJson(path.join(bundleDir, "candidate-skills.json"), candidateReport);
     for (const candidate of candidateReport.candidates) {
@@ -426,10 +610,12 @@ export function writeBundleArtifacts(preset, outRoot, options = {}) {
       "share.json",
       "registry-entry.json",
       ...(historyReport ? ["history-report.json"] : []),
+      ...(toolRoutingReport ? ["tool-routing-report.json", "action-dag.json", "next-action-dataset.json"] : []),
       ...(candidateReport ? ["candidate-skills.json"] : []),
       ...buildHostTargets().map((target) => target.snippet_path),
     ],
     history_report: historyReport ? path.join(bundleDir, "history-report.json") : null,
+    tool_routing_report: toolRoutingReport ? path.join(bundleDir, "tool-routing-report.json") : null,
     candidate_report: candidateReport ? path.join(bundleDir, "candidate-skills.json") : null,
   };
 }
