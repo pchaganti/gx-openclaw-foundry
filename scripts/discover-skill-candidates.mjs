@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import path from "node:path";
-import { discoverCandidateSkills, installCandidateSkills, loadHistoryTexts, parseArgs, readPreset, validatePreset } from "./foundry-lib.mjs";
+import { loadHistoryTexts, parseArgs, readPreset, validatePreset } from "./foundry-lib.mjs";
+import { discoverCandidateSkills, installCandidateSkills } from "./foundry-candidates.mjs";
 
 function runOnce(preset, threshold) {
   const texts = loadHistoryTexts(preset);

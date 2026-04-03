@@ -21,9 +21,9 @@ test("discovers recurring candidate skills from history and writes report", () =
   tmpDirs.push(home, path.dirname(outFile));
   mkdirSync(path.join(home, ".codex"), { recursive: true });
   writeFileSync(path.join(home, ".codex", "history.jsonl"), [
-    JSON.stringify({ text: "build weekly investor update dashboard from csv and metrics" }),
-    JSON.stringify({ text: "build weekly investor update memo from metrics and csv" }),
-    JSON.stringify({ text: "build weekly investor update report using csv metrics" }),
+    JSON.stringify({ text: "build weekly investor update dashboard from csv and metrics using OPENAI_API_KEY=sk-live-secret-value and ~/.config/gcloud/application_default_credentials.json" }),
+    JSON.stringify({ text: "build weekly investor update memo from metrics and csv with process.env.SLACK_BOT_TOKEN plus .env.local" }),
+    JSON.stringify({ text: "build weekly investor update report using csv metrics for lewis@example.com from /Users/lekt9/.aws/credentials" }),
     "",
   ].join("\n"));
 
@@ -41,6 +41,8 @@ test("discovers recurring candidate skills from history and writes report", () =
   const result = JSON.parse(stdout);
   const written = JSON.parse(readFileSync(outFile, "utf8"));
   const installedSkill = path.join(home, ".codex", "skills", result.candidates[0].slug, "SKILL.md");
+  const runtimePointers = path.join(home, ".codex", "skills", result.candidates[0].slug, "references", "runtime-pointers.md");
+  const evidence = written.candidates[0].evidence.join("\n");
 
   assert.equal(result.bundle_id, "unbrowse-workflows");
   assert.ok(result.candidates.length >= 1);
@@ -48,4 +50,10 @@ test("discovers recurring candidate skills from history and writes report", () =
   assert.match(result.candidates[0].summary, /recurring/i);
   assert.equal(result.install_result.host, "codex");
   assert.match(readFileSync(installedSkill, "utf8"), /generated_by: foundry/);
+  assert.match(readFileSync(runtimePointers, "utf8"), /OPENAI_API_KEY/);
+  assert.match(readFileSync(runtimePointers, "utf8"), /SLACK_BOT_TOKEN/);
+  assert.match(readFileSync(runtimePointers, "utf8"), /\.env\.local/);
+  assert.match(readFileSync(runtimePointers, "utf8"), /~\/\.aws\/credentials/);
+  assert.doesNotMatch(readFileSync(installedSkill, "utf8"), /OPENAI_API_KEY|SLACK_BOT_TOKEN|sk-live-secret-value|lewis@example\.com|\/Users\/lekt9/);
+  assert.doesNotMatch(evidence, /sk-live-secret-value|lewis@example\.com|\/Users\/lekt9/);
 });

@@ -28,15 +28,17 @@ Workflow:
 
 1. Run `npm run discover` to identify recurring workflow clusters.
 2. Inspect `candidate-skills.json` and scaffolded candidate `SKILL.md` drafts; candidate skills now auto-install into the local host skill dir unless `--no-install` is set.
-3. Run `npm run prepare-router` to build the explicit action DAG and next-action prep artifacts from tool traces.
-4. Run `npm run fabricate` to emit bundle/share/index/memory artifacts together with routing prep outputs.
-5. If needed, rerun `scripts/fabricate-bundle.mjs` with `--host` and `--scope` to write host memory.
+3. Keep env-var names and secret/config locations in `references/runtime-pointers.md`; do not bake values, PII, emails, or user-specific paths into `SKILL.md`.
+4. Run `npm run prepare-router` to build the explicit action DAG and next-action prep artifacts from tool traces.
+5. Run `npm run fabricate` to emit bundle/share/index/memory artifacts together with routing prep outputs.
+6. If needed, rerun `scripts/fabricate-bundle.mjs` with `--host` and `--scope` to write host memory.
 
 Load-bearing rules:
 
 - one preset is the source of truth
 - one entry skill owns the bundle-level job
 - candidate skill discovery must be evidence-backed
+- candidate skill evidence must be sanitized before persistence
 - tool-routing prep should stay explicit and local before any trained router is introduced
 - bundle, share, registry, and memory outputs stay derived from the same preset
 - memory must say which skill to call, not just what to install
