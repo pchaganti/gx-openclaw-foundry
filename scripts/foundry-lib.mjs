@@ -247,6 +247,29 @@ export function buildShareManifest(preset) {
   };
 }
 
+export function normalizeSiteUrl(siteUrl) {
+  return String(siteUrl || process.env.FOUNDRY_SITE_URL || "https://www.unbrowse.ai")
+    .trim()
+    .replace(/\/+$/, "");
+}
+
+export function publicManifestPathFor(preset, publicRoot) {
+  if (!publicRoot) throw new Error("publicRoot is required");
+  if (!preset.share?.manifest_path) throw new Error("share.manifest_path required");
+  return path.resolve(publicRoot, String(preset.share.manifest_path).replace(/^\/+/, ""));
+}
+
+export function writePublicShareManifest(preset, publicRoot) {
+  const target = publicManifestPathFor(preset, publicRoot);
+  writeJson(target, buildShareManifest(preset));
+  return target;
+}
+
+export function buildPublicShareUrl(preset, siteUrl) {
+  if (!preset.share?.manifest_path) throw new Error("share.manifest_path required");
+  return `${normalizeSiteUrl(siteUrl)}${preset.share.manifest_path}`;
+}
+
 export function buildRegistryEntry(preset) {
   const skillEntries = presetSkillEntries(preset);
   return {

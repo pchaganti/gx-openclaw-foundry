@@ -33,6 +33,16 @@ npm run prepare-router
 npm run fabricate
 ```
 
+Publish the public share manifest in the same pass:
+
+```bash
+node scripts/publish-bundle.mjs \
+  --preset presets/unbrowse-workflows.json \
+  --out dist \
+  --public-root ../unbrowse/frontend/public \
+  --site-url https://www.unbrowse.ai
+```
+
 Watch for new recurring workflows:
 
 ```bash
@@ -375,6 +385,7 @@ Host targets:
 - `scripts/mine-history.mjs` -- inspect known history matches
 - `scripts/prepare-tool-routing.mjs` -- build explicit action-DAG and next-action prep artifacts from tool traces
 - `scripts/fabricate-bundle.mjs` -- one-pass bundle/share/index/memory generation
+- `scripts/publish-bundle.mjs` -- fabricate bundle artifacts and copy public `share.json` into a site root
 - `scripts/foundry-lib.mjs` -- shared derivation logic
 - `tests/` -- regression coverage
 
